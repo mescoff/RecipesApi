@@ -1,12 +1,15 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RecipesApi.Models
 {
+    [Table("recipes")]
+
     public class RecipeBase
     {
        [Required]
-        public int RecipeId { get; set; }
+        public int Recipe_Id { get; set; }
 
         [Required]
         public string TitleShort { get; set; }

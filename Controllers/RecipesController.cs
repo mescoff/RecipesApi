@@ -12,17 +12,17 @@ namespace RecipesApi.Controllers
     [ApiController]
     public class RecipesController : ControllerBase
     {
-        private readonly IRecipesRepository _repo;
-        public RecipesController(IRecipesRepository repo)
+        private readonly IRecipesService _recipesService;
+        public RecipesController(IRecipesService recipeService)
         {
-            this._repo = repo;
+            this._recipesService = recipeService;
         }
 
         // GET: api/Recipes
         [HttpGet]
         [Route("[action]")]
-        public async Task<IActionResult> GetRecipes() { 
-            var recipes = await this._repo.GetAllRecipes();
+        public IActionResult GetRecipes() {
+            var recipes = this._recipesService.GetAllRecipes();
             if (recipes.ToList().Count == 0)
             {
                 return NoContent();
@@ -31,28 +31,28 @@ namespace RecipesApi.Controllers
         }
 
         // GET: api/Recipes/5
-        [HttpGet("{id}", Name = "Get")]
-        public string Get(int id)
-        {
-            return "value";
-        }
+        //[HttpGet("{id}", Name = "Get")]
+        //public string Get(int id)
+        //{
+        //    return "value";
+        //}
 
-        // POST: api/Recipes
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
+        //// POST: api/Recipes
+        //[HttpPost]
+        //public void Post([FromBody] string value)
+        //{
+        //}
 
-        // PUT: api/Recipes/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
+        //// PUT: api/Recipes/5
+        //[HttpPut("{id}")]
+        //public void Put(int id, [FromBody] string value)
+        //{
+        //}
 
-        // DELETE: api/ApiWithActions/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
+        //// DELETE: api/ApiWithActions/5
+        //[HttpDelete("{id}")]
+        //public void Delete(int id)
+        //{
+        //}
     }
 }

@@ -11,8 +11,8 @@
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
-      "launchBrowser": true,
-      "launchUrl": "recipes",
+      //"launchBrowser": true,
+      //"launchUrl": "recipes",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
