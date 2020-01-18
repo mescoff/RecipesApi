@@ -1,6 +1,11 @@
-﻿namespace RecipesApi
+﻿using Microsoft.EntityFrameworkCore;
+using RecipesApi.Models;
+
+namespace RecipesApi
 {
-    internal interface IRecipesContext
+    public interface IRecipesContext
     {
+        DbSet<RecipeBase> Recipes { get; set; }
+        DbSet<Unit> Units { get; set; }
     }
 }

@@ -15,6 +15,7 @@ namespace RecipesApi
         }
 
         public DbSet<RecipeBase> Recipes { get; set; }
+        public DbSet<Unit> Units { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,13 @@ namespace RecipesApi
                 entity.Property(e => e.CreationDate).IsRequired();
                 entity.Property(e => e.Description).IsRequired();
                 entity.Property(e => e.LastModifier).IsRequired();
+            });
+
+            modelBuilder.Entity<Unit>(entity =>
+            {
+                entity.HasKey(e => e.Unit_Id);
+                entity.Property(e => e.Name).IsRequired();
+                entity.Property(e => e.Symbol).IsRequired();
             });
 
             //modelBuilder.Entity<Book>(entity =>

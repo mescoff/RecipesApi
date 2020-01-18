@@ -6,13 +6,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using RecipesApi.Repositories;
-//using Microsoft.OpenApi.Models;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using Pomelo.EntityFrameworkCore.MySql.Storage;
+using System;
+using System.IO;
+using System.Reflection;
 
 namespace RecipesApi
 {
+    /// <summary>
+    /// Startup
+    /// </summary>
     public class Startup
     {
+        /// <summary>
+        /// Startup constructor
+        /// </summary>
+        /// <param name="configuration"></param>
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -24,13 +34,22 @@ namespace RecipesApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddDbContext<RecipesContext>(options => options.UseMySQL(Configuration.GetConnectionString("DefaultConnection")));
-            //services.AddSingleton<IRecipesRepository>(context => new RecipesRepository(context.GetService<ILogger<IRecipesRepository>>(),Configuration.GetConnectionString("DefaultConnection")));
+            // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
+            // Using Pomelo instead which support NetCore 3+
+            services.AddDbContext<RecipesContext>(options => 
+                options.UseMySql(
+                    Configuration.GetConnectionString("DefaultConnection"), 
+                    mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
+                );
             services.AddScoped<IRecipesService,RecipesService>();
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Recipe API", Version = "v1" });
+                // Set the comments path for the Swagger JSON and UI.
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
             });
         }
 
