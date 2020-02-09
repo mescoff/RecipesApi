@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RecipesApi.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace RecipesApi.Controllers
 {
@@ -13,14 +16,16 @@ namespace RecipesApi.Controllers
     public class UnitsController : ControllerBase
     {
         private RecipesContext _context;
+        private IMapper _mapper;
 
         /// <summary>
         /// Units controller constructor
         /// </summary>
         /// <param name="context"></param>
-        public UnitsController(RecipesContext context)
+        public UnitsController(RecipesContext context, IMapper mapper)
         {
             this._context = context;
+            this._mapper = mapper;
         }
 
         /// <summary>
@@ -35,8 +40,13 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAll()
         {
-            var units = this._context.Units;
-            return this.GetAllFormatedResp(units);
+            var units = this._context.Units.ToList(); ;
+            if (units.Count == 0)
+            {
+                return NoContent();
+            }
+            this.AddCountToHeader(units);
+            return Ok(units);
         }
 
         /// <summary>
@@ -108,25 +118,28 @@ namespace RecipesApi.Controllers
         /// <response code="422">Input cannot be processed</response> 
         // PUT: api/Units/5
         //[HttpPut("{id}")]
-        //[ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //public IActionResult Put(int id, [FromBody] Unit input)
-        //{
-        //    var unit = this._context.Units.Find(id);
-        //    //making sure both id match
-        //    if (id != input.Unit_Id)
-        //    {
-        //        return UnprocessableEntity(input);
-        //    }
-        //    this._context.Entry<Unit>(input).State = EntityState.Detached;
-        //    this._context.Units.Update(input);
-        //    var result = this._context.SaveChanges();
-        //    if (result != 1)
-        //    {
-        //        return UnprocessableEntity(id);
-        //    }
-        //    return Ok();
-        //}
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult Put([FromBody] Unit input)
+        {
+            var unit = this._context.Units.Find(input.Unit_Id);
+            //making sure both ids match
+            //if (id != input.Unit_Id || unit == null)
+            //{
+            //    return UnprocessableEntity(input);
+            //}
+            // TODO: check if below is bad practice. Context is not scoped here so if object you try to modify is still attached it creates a conflict
+            this._context.Entry<Unit>(unit).State = EntityState.Detached;
+            // TODO: create generic method shared among controllers that will update original object and only modified fields (except creationDate/Audit)
+            this._context.Units.Update(input);
+            var result = this._context.SaveChanges();
+            if (result != 1)
+            {
+                return UnprocessableEntity(input);
+            }
+            return Ok();
+        }
 
         /// <summary>
         /// Delete unit

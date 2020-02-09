@@ -7,5 +7,6 @@ namespace RecipesApi
     {
         DbSet<RecipeBase> Recipes { get; set; }
         DbSet<Unit> Units { get; set; }
+        DbSet<Ingredient> Ingredients { get; set; }
     }
 }

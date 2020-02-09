@@ -16,15 +16,10 @@ namespace RecipesApi.Controllers
         /// <param name="controller">The controller</param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public static IActionResult GetAllFormatedResp(this ControllerBase controller, IEnumerable<object> result)
+        public static void AddCountToHeader(this ControllerBase controller, IEnumerable<object> result)
         {
-            var resultCount = result.ToList().Count;
-            if (resultCount == 0)
-            {
-                return controller.NoContent();
-            }
+            var resultCount = result.ToList().Count;          
             controller.Response.Headers.Add("x-items-Count", resultCount.ToString());
-            return controller.Ok(result);
         }
     }
 }

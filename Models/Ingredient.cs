@@ -10,6 +10,7 @@ namespace RecipesApi.Models
     [Table("recipe_ingredients")]
     public class Ingredient
     {
+        [Key]
         public int RecipeIng_Id { get; set; }
         [Required]
         public string Name { get; set; }
@@ -20,8 +21,16 @@ namespace RecipesApi.Models
         [Required]
         public int Recipe_Id { get; set; }
 
+        [ForeignKey("Recipe_Id")]
+        public virtual RecipeBase Recipe {get; set;}
+
+        //public RecipeBase Recipe { get; set; }
+
         [Required]
         public int Unit_Id { get; set; }
-        public Unit Unit { get; set; }
+
+        [ForeignKey("Unit_Id")]
+        public virtual Unit Unit { get; set; }
+        //public virtual Unit Unit { get; set; }
     }
 }

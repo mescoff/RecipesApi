@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Pomelo.EntityFrameworkCore.MySql.Storage;
+using RecipesApi.Models;
+using RecipesApi.Services;
 using System;
 using System.IO;
 using System.Reflection;
@@ -33,15 +36,20 @@ namespace RecipesApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddAutoMapper(typeof(Startup));
             services.AddControllers();
             // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
             // Using Pomelo instead which support NetCore 3+
+            // Lazy loading DBSets only when needed
             services.AddDbContext<RecipesContext>(options => 
-                options.UseMySql(
+                options
+                    .UseLazyLoadingProxies()
+                    .UseMySql(
                     Configuration.GetConnectionString("DefaultConnection"), 
                     mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
                 );
-            services.AddScoped<IRecipesService,RecipesService>();
+            services.AddScoped<IEntityService<RecipeBase>,RecipesService>();
+            services.AddScoped<IEntityService<Ingredient>,IngredientsService>();
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
