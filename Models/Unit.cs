@@ -10,7 +10,6 @@ namespace RecipesApi.Models
     [Table("units")]
     public class Unit
     {
-        //[ForeignKey("Ingredient")]
         [Key]
         public int Unit_Id { get; set; }
         [Required]

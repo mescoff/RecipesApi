@@ -22,6 +22,7 @@ namespace RecipesApi
 
             modelBuilder.Entity<Unit>();
 
+            // TODO: Below migh not be needed
             modelBuilder.Entity<Ingredient>(entity =>
             {
                 entity.HasKey(e => e.RecipeIng_Id);

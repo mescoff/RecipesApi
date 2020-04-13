@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using RecipesApi.Models;
-using System.Collections.Generic;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace RecipesApi.Controllers
 {
@@ -15,17 +17,19 @@ namespace RecipesApi.Controllers
     [ApiController]
     public class UnitsController : ControllerBase
     {
-        private RecipesContext _context;
-        private IMapper _mapper;
+      
+        private IEntityService<Unit> _unitsService;
+        private ILogger _logger;
 
         /// <summary>
         /// Units controller constructor
         /// </summary>
-        /// <param name="context"></param>
-        public UnitsController(RecipesContext context, IMapper mapper)
+        /// <param name="unitsService">The units service</param>
+        /// <param name="mapper">The mapper</param>
+        public UnitsController(IEntityService<Unit> unitsService, IMapper mapper, ILogger<UnitsController> logger)
         {
-            this._context = context;
-            this._mapper = mapper;
+            this._logger = logger;
+            this._unitsService = unitsService;
         }
 
         /// <summary>
@@ -40,7 +44,7 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAll()
         {
-            var units = this._context.Units.ToList(); ;
+            var units = this._unitsService.GetAll().ToList();
             if (units.Count == 0)
             {
                 return NoContent();
@@ -50,7 +54,7 @@ namespace RecipesApi.Controllers
         }
 
         /// <summary>
-        /// Get unit by id
+        /// Get 1 unit by id
         /// </summary>
         /// <param name="id">Unit id</param>
         /// <returns>unit</returns>
@@ -60,9 +64,9 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [HttpGet("{id}", Name = "GetUnit")]
-        public IActionResult Get(int id)
+        public async Task<ActionResult> Get(int id)
         {
-            var unit = this._context.Units.Find(id);
+            var unit = await this._unitsService.GetOne(id);
             if (unit == null)
             {
                 return NoContent();
@@ -93,20 +97,34 @@ namespace RecipesApi.Controllers
         /// <returns></returns>
         /// <response code="200">Unit was created</response>
         /// <response code="422">Input cannot be processed</response> 
+        /// <response code="409">Input already exists</response> 
+        /// <response code="500">Issue on server side</response> 
         // POST: api/Units
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult Post([FromBody] Unit input)
         {
-            input.Unit_Id = 0;
-            this._context.Units.Add(input);
-            var result = this._context.SaveChanges();
-            if (result != 1)
+            try
             {
-                return UnprocessableEntity(input);
+                var isSuccess = this._unitsService.AddOne(input);
+                if (!isSuccess)
+                {
+                    return UnprocessableEntity(input);
+                }
+                return Ok();
             }
-            return Ok();
+            catch (Exception e)
+            {
+                if (e.InnerException.ToString().Contains("Duplicate"))
+                {
+                    this._logger.LogError($"Exception on input: {JsonConvert.SerializeObject(input)}. Error: {e.InnerException.ToString()}");
+                    return Conflict(input);
+                }
+                return StatusCode(500);
+            }
         }
 
         /// <summary>
@@ -123,22 +141,19 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult Put([FromBody] Unit input)
         {
-            var unit = this._context.Units.Find(input.Unit_Id);
-            //making sure both ids match
-            //if (id != input.Unit_Id || unit == null)
-            //{
-            //    return UnprocessableEntity(input);
-            //}
-            // TODO: check if below is bad practice. Context is not scoped here so if object you try to modify is still attached it creates a conflict
-            this._context.Entry<Unit>(unit).State = EntityState.Detached;
-            // TODO: create generic method shared among controllers that will update original object and only modified fields (except creationDate/Audit)
-            this._context.Units.Update(input);
-            var result = this._context.SaveChanges();
-            if (result != 1)
+            var isSuccess = this._unitsService.UpdateOne(input);
+            if (!isSuccess)
             {
                 return UnprocessableEntity(input);
             }
             return Ok();
+
+            //var unit = this._context.Units.Find(input.Unit_Id);     
+            // TODO: check if below is bad practice. Context is not scoped here so if object you try to modify is still attached it creates a conflict
+
+            // this._context.Entry<Unit>(unit).State = EntityState.Detached;
+            // this._context.Units.Update(input);
+            //  var result = this._context.SaveChanges();          
         }
 
         /// <summary>
@@ -151,12 +166,13 @@ namespace RecipesApi.Controllers
         // DELETE: api/ApiWithActions/5
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            this._context.Units.Remove(this._context.Units.Find(id));
-            var result = this._context.SaveChanges();
-            if (result != 1)
+            // TODO: Consider potentially dangerous cascade delete here. If Unit is deleted it could go delete all ingredients connected to it
+            var isSuccess = this._unitsService.DeleteOne(id);
+            if (!isSuccess)
             {
                 return UnprocessableEntity(id);
             }

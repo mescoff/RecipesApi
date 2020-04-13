@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
@@ -22,7 +19,9 @@ namespace RecipesApi.Models
         public int Recipe_Id { get; set; }
 
         [ForeignKey("Recipe_Id")]
-        public virtual RecipeBase Recipe {get; set;}
+        [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
+        public RecipeBase Recipe {get; set;}
+        //public virtual RecipeBase Recipe {get; set;}
 
         //public RecipeBase Recipe { get; set; }
 
@@ -30,7 +29,7 @@ namespace RecipesApi.Models
         public int Unit_Id { get; set; }
 
         [ForeignKey("Unit_Id")]
-        public virtual Unit Unit { get; set; }
+        public Unit Unit { get; set; }
         //public virtual Unit Unit { get; set; }
     }
 }

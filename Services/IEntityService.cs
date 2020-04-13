@@ -1,13 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
-using RecipesApi.Models;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace RecipesApi
 {
-    public interface IEntityService<T> 
+    public interface IEntityService<T> : IDisposable
     {
+        // TODO: should get all be async?
         IEnumerable<T> GetAll();
-        T GetOne(int id);
+        Task<T> GetOne(int id);
         bool AddOne(T recipe);
         bool DeleteOne(int id);
         bool UpdateOne(T input);

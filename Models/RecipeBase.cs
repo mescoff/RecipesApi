@@ -29,7 +29,8 @@ namespace RecipesApi.Models
         public DateTime? CreationDate { get; set; }
 
        // [ForeignKey("RecipeIng_Id")]
-        public virtual IEnumerable<Ingredient> Ingredients { get; set; }
+        public IEnumerable<Ingredient> Ingredients { get; set; }
+        //public virtual IEnumerable<Ingredient> Ingredients { get; set; }
 
     }
 }

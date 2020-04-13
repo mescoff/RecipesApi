@@ -5,6 +5,7 @@ using System.Linq;
 using RecipesApi.Models;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 namespace RecipesApi.Controllers
 {
@@ -28,32 +29,47 @@ namespace RecipesApi.Controllers
             this._mapper = mapper;
         }
 
+        /// <summary>
+        /// Get Recipes
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">Returns found items</response>
+        /// <response code="204">No items found</response>
         // GET: api/Recipes
         [HttpGet(Name = "GetRecipes")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult GetAll() {
-            var recipes = (this._recipesService.GetAll()).ToList(); 
+        public async Task<ActionResult> GetAll() {
+            var recipes =  this._recipesService.GetAll().ToList(); 
             if (recipes.Count == 0)
             {
                 return NoContent();
             }
             this.AddCountToHeader(recipes);
-            return Ok(this._mapper.Map<List<RecipeBase>, List<RecipeBaseDto>>(recipes));
+            //return Ok(this._mapper.Map<List<RecipeBase>, List<RecipeBaseDto>>(recipes));
+            return Ok(recipes);
         }
 
+        /// <summary>
+        /// Get 1 recipe by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <response code="200">Returns found item</response>
+        /// <response code="204">No items found</response>
         // GET: api/Recipes/5
         [HttpGet("{id}", Name = "GetRecipe")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Get(int id)
+        public async Task<ActionResult> Get(int id)
         {
-            var recipe = this._recipesService.GetOne(id);
+            var recipe = await this._recipesService.GetOne(id);
             if (recipe == null)
             {
                 return NoContent();
             }
-            return Ok(this._mapper.Map<RecipeBase,RecipeBaseDto>(recipe));
+            //return Ok(this._mapper.Map<RecipeBase,RecipeBaseDto>(recipe));
+            return Ok(recipe);
         }
 
         /// <summary>
@@ -73,9 +89,12 @@ namespace RecipesApi.Controllers
         ///         "auditDate": null,
         ///         "creationDate": null
         ///     }
+        ///     
         /// </remarks> 
         /// <param name="input">Recipe</param>
         /// <returns></returns>
+        /// <response code="200">Recipe was created</response>
+        /// <response code="422">Input cannot be processed</response> 
         //// POST: api/Recipes
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -91,6 +110,13 @@ namespace RecipesApi.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Update recipe
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        /// <response code="200">Recipe was updated</response>
+        /// <response code="422">Input cannot be processed</response>
         //// PUT: api/Recipes/5
         // [HttpPut("{id}")]
         [HttpPut]
@@ -108,6 +134,13 @@ namespace RecipesApi.Controllers
 
         }
 
+        /// <summary>
+        /// Delete recipe
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <response code="200">Recipe was deleted</response>
+        /// <response code="422">Input cannot be processed</response>
         //// DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -118,7 +151,7 @@ namespace RecipesApi.Controllers
             if (!isSuccess)
             {
                 // TODO: this should return diff error depending on if couldn't remove or couldn't find
-                return UnprocessableEntity(id);
+                return UnprocessableEntity($"Deletion cannot be processed for Recipe with ID {id}. Recipe might not exist");
             }
             return Ok();
         }

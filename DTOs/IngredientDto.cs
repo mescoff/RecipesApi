@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using RecipesApi.Models;
 using System.Runtime.Serialization;
-using System.Threading.Tasks;
 
 namespace RecipesApi.DTOs
 {
@@ -18,7 +15,9 @@ namespace RecipesApi.DTOs
         [DataMember]
         public int Recipe_Id { get; set; }
         [DataMember]
-        public int Unit_Id { get; set; }
+        public int Unit_Id { get; set; } // TODO: Maybe keep Unit_ID ? So that as input, Unit is empty but Unit Id is provided, and as Output, we give both
+        [DataMember]
+        public Unit Unit { get; set; }
 
     }
 }
