@@ -1,0 +1,7 @@
+.vs/*
+obj/*
+bin/*
+logs/*
+appsettings.Development.json
+RecipesApi.csproj.user
+db_info.txt

@@ -8,7 +8,7 @@ namespace RecipesApi.Services
 {
     public class IngredientsService: EntityService<Ingredient>
     {
-        public IngredientsService(RecipesContext context, ILogger<IngredientsService> logger) : base(context, logger)
+        public IngredientsService(DbContext context, ILogger<IngredientsService> logger) : base(context, logger)
         {
         }
 
@@ -21,15 +21,15 @@ namespace RecipesApi.Services
 
         public async override Task<Ingredient> GetOne(int id)
         {
-            var result = await this._context.Set<Ingredient>().Include(r => r.Unit).SingleOrDefaultAsync(r => r.RecipeIng_Id == id);
+            var result = await this._context.Set<Ingredient>().Include(r => r.Unit).SingleOrDefaultAsync(r => r.Id == id);
             return result;
         }
 
-        protected override Ingredient prepareInputForUpdate(Ingredient input, bool isCreation)
+        protected override Ingredient prepareInputForCreateOrUpdate(Ingredient input, bool isCreation)
         {
             if (isCreation)
             {
-                input.RecipeIng_Id = 0;
+                input.Id = 0;
             }
             return input;
         }

@@ -7,7 +7,7 @@ namespace RecipesApi.DTOs
     public class IngredientDto
     {
         [DataMember]
-        public int RecipeIng_Id { get; set; }
+        public int Id { get; set; }
         [DataMember]
         public string Name { get; set; }
         [DataMember]

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using RecipesApi.DTOs;
 using System.Linq;
 using RecipesApi.Models;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 
@@ -16,14 +15,14 @@ namespace RecipesApi.Controllers
     [ApiController]
     public class RecipesController : ControllerBase
     {
-        private readonly IEntityService<RecipeBase> _recipesService;
+        private readonly IEntityService<Recipe> _recipesService;
         private readonly IMapper _mapper;
 
         /// <summary>
         /// Recipes Controller constructor
         /// </summary>
         /// <param name="recipeService"></param>
-        public RecipesController(IEntityService<RecipeBase> recipeService, IMapper mapper)
+        public RecipesController(IEntityService<Recipe> recipeService, IMapper mapper)
         {
             this._recipesService = recipeService;
             this._mapper = mapper;
@@ -99,10 +98,10 @@ namespace RecipesApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Post([FromBody] RecipeBaseDto input)
+        public IActionResult Post([FromBody] Recipe input)
         {
-            var recipe = this._mapper.Map<RecipeBaseDto, RecipeBase>(input);
-            var isSuccess = this._recipesService.AddOne(recipe);
+            //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
+            var isSuccess = this._recipesService.AddOne(input);
             if (!isSuccess)
             {
                 return UnprocessableEntity(input);
@@ -122,16 +121,15 @@ namespace RecipesApi.Controllers
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Put([FromBody] RecipeBaseDto input)
+        public IActionResult Put([FromBody] Recipe input)
         {
-            var recipe = this._mapper.Map<RecipeBaseDto, RecipeBase>(input);
-            var isSuccess = this._recipesService.UpdateOne(recipe);
+            //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
+            var isSuccess = this._recipesService.UpdateOne(input);
             if (!isSuccess)
             {
                 return UnprocessableEntity(input);
             }
             return Ok();
-
         }
 
         /// <summary>

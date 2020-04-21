@@ -42,14 +42,14 @@ namespace RecipesApi
             // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
             // Using Pomelo instead which support NetCore 3+
             // Lazy loading DBSets only when needed
-            services.AddDbContext<RecipesContext>(options =>
+            services.AddDbContext<DbContext>(options =>
                 //.UseLazyLoadingProxies()
                 options
                     .UseMySql(
                     Configuration.GetConnectionString("DefaultConnection"), 
                     mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
                 );
-            services.AddScoped<IEntityService<RecipeBase>,RecipesService>();
+            services.AddScoped<IEntityService<Recipe>,RecipesService>();
             services.AddScoped<IEntityService<Ingredient>,IngredientsService>();
             services.AddScoped<IEntityService<Unit>,UnitsService>();
             // Register the Swagger generator, defining 1 or more Swagger documents

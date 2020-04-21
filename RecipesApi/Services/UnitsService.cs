@@ -13,7 +13,7 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="context">The database context</param>
         /// <param name="logger">The logger</param>
-        public UnitsService(RecipesContext context, ILogger<UnitsService> logger) : base(context, logger)
+        public UnitsService(DbContext context, ILogger<UnitsService> logger) : base(context, logger)
         {
         }
 
@@ -23,11 +23,11 @@ namespace RecipesApi.Services
         /// <param name="input">The unit</param>
         /// <param name="isCreation">Is it a creation or update</param>
         /// <returns></returns>
-        protected override Unit prepareInputForUpdate(Unit input, bool isCreation)
+        protected override Unit prepareInputForCreateOrUpdate(Unit input, bool isCreation)
         {
             if (isCreation)
             {
-                input.Unit_Id = 0;
+                input.Id = 0;
             }
             return input;
         }

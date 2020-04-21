@@ -3,14 +3,14 @@ using RecipesApi.Models;
 
 namespace RecipesApi
 {
-    public class RecipesContext : DbContext
+    public class DbContext : Microsoft.EntityFrameworkCore.DbContext
     {
-        public RecipesContext(DbContextOptions<RecipesContext> options)
+        public DbContext(DbContextOptions<DbContext> options)
         : base(options)
         {
         }
 
-        public DbSet<RecipeBase> Recipes { get; set; }
+        public DbSet<Recipe> Recipes { get; set; }
         public DbSet<Unit> Units { get; set; }
         public DbSet<Ingredient> Ingredients { get; set; }
 
@@ -18,19 +18,21 @@ namespace RecipesApi
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<RecipeBase>();
+            modelBuilder.Entity<Recipe>() ;
 
             modelBuilder.Entity<Unit>();
 
             // TODO: Below migh not be needed
-            modelBuilder.Entity<Ingredient>(entity =>
-            {
-                entity.HasKey(e => e.RecipeIng_Id);
-                entity.Property(e => e.Recipe_Id).IsRequired();
-                entity.Property(e => e.Quantity).IsRequired();
-                entity.Property(e => e.Name).IsRequired();
-                entity.Property(e => e.Unit_Id).IsRequired();
-            });
+            modelBuilder.Entity<Ingredient>();
+            //modelBuilder.Entity<Ingredient>(entity =>
+            //{
+            //    entity.HasKey(e => e.RecipeIng_Id);
+            //    entity.Property(e => e.Recipe_Id).IsRequired();
+            //    entity.Property(e => e.Quantity).IsRequired();
+            //    entity.Property(e => e.Name).IsRequired();
+            //    entity.Property(e => e.Unit_Id).IsRequired();
+            //});
+
             //modelBuilder.Entity<Ingredient>().HasOne(d => d.Unit);
 
             //modelBuilder.Entity<RecipeBase>(

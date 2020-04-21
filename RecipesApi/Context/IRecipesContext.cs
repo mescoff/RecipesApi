@@ -5,7 +5,7 @@ namespace RecipesApi
 {
     public interface IRecipesContext
     {
-        DbSet<RecipeBase> Recipes { get; set; }
+        DbSet<Recipe> Recipes { get; set; }
         DbSet<Unit> Units { get; set; }
         DbSet<Ingredient> Ingredients { get; set; }
     }

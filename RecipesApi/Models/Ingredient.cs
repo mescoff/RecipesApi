@@ -5,10 +5,12 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("recipe_ingredients")]
-    public class Ingredient
+    public class Ingredient: ICustomModel
     {
         [Key]
-        public int RecipeIng_Id { get; set; }
+        [Column("RecipeIng_Id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
         [Required]
         public string Name { get; set; }
 
@@ -20,7 +22,7 @@ namespace RecipesApi.Models
 
         [ForeignKey("Recipe_Id")]
         [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
-        public RecipeBase Recipe {get; set;}
+        public Recipe Recipe {get; set;}
         //public virtual RecipeBase Recipe {get; set;}
 
         //public RecipeBase Recipe { get; set; }

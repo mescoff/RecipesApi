@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace RecipesApi.Models
 {
     [Table("units")]
-    public class Unit
+    public class Unit: ICustomModel
     {
         [Key]
-        public int Unit_Id { get; set; }
+        [Column("Unit_Id")]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
         [Required]
         public string Name { get; set; }
         [Required]
