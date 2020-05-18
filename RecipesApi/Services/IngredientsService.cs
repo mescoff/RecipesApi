@@ -25,13 +25,12 @@ namespace RecipesApi.Services
             return result;
         }
 
-        protected override Ingredient prepareInputForCreateOrUpdate(Ingredient input, bool isCreation)
+        protected override void prepareInputForCreateOrUpdate(Ingredient input, bool isCreation)
         {
             if (isCreation)
             {
                 input.Id = 0;
             }
-            return input;
         }
 
     }

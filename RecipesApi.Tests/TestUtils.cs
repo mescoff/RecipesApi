@@ -12,6 +12,7 @@ namespace RecipesApi.Tests
         {
             var options = new DbContextOptionsBuilder<DbContext>()
                   .UseInMemoryDatabase("TestContext")
+                  .EnableSensitiveDataLogging()
                   .Options;
             var recipeContext = new DbContext(options);
             recipeContext.Database.EnsureCreated();

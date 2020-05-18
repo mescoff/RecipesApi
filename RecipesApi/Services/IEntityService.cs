@@ -9,8 +9,8 @@ namespace RecipesApi
         // TODO: should get all be async?
         IEnumerable<T> GetAll();
         Task<T> GetOne(int id);
-        bool AddOne(T recipe);
-        bool DeleteOne(int id);
-        bool UpdateOne(T input);
+        Task<int> AddOne(T recipe);
+        Task<bool> DeleteOne(int id);
+        Task<bool> UpdateOne(T input);
     }
 }

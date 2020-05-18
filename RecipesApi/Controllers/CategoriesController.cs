@@ -5,111 +5,112 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RecipesApi.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace RecipesApi.Controllers
 {
     /// <summary>
-    /// Units Controller
+    /// Categories Controller
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class UnitsController : ControllerBase
+    public class CategoriesController : ControllerBase
     {
-      
-        private IEntityService<Unit> _unitsService;
+
+        private IEntityService<Category> _categoriesService;
         private ILogger _logger;
 
         /// <summary>
-        /// Units controller constructor
+        /// Categories controller constructor
         /// </summary>
-        /// <param name="unitsService">The units service</param>
+        /// <param name="categoriesService">The categories service</param>
         /// <param name="mapper">The mapper</param>
-        public UnitsController(IEntityService<Unit> unitsService, IMapper mapper, ILogger<UnitsController> logger)
+        public CategoriesController(IEntityService<Category> categoriesService, IMapper mapper, ILogger<CategoriesController> logger)
         {
             this._logger = logger;
-            this._unitsService = unitsService;
+            this._categoriesService = categoriesService;
         }
 
         /// <summary>
-        /// Get units
+        /// Get categories
         /// </summary>
-        /// <returns>List of units</returns>
+        /// <returns>List of categories</returns>
         /// <response code="200">Returns found item</response>
         /// <response code="204">No items found</response>
-        // GET: api/Units
-        [HttpGet(Name = "GetUnits")]
+        // GET: api/Categories
+        [HttpGet(Name = "GetCategories")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAll()
         {
-            var units = this._unitsService.GetAll().ToList();
-            if (units.Count == 0)
+            var categories = this._categoriesService.GetAll().ToList();
+            if (categories.Count == 0)
             {
                 return NoContent();
             }
-            this.AddCountToHeader(units);
-            return Ok(units);
+            this.AddCountToHeader(categories);
+            return Ok(categories);
         }
 
         /// <summary>
-        /// Get 1 unit by id
+        /// Get 1 category by id
         /// </summary>
-        /// <param name="id">Unit id</param>
-        /// <returns>unit</returns>
+        /// <param name="id">Category id</param>
+        /// <returns>category</returns>
         /// <response code="200">Returns found item</response>
         /// <response code="204">No items found</response>
-        // GET: api/Units/5
+        // GET: api/Categories/5
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [HttpGet("{id}", Name = "GetUnit")]
+        [HttpGet("{id}", Name = "GetCategory")]
         public async Task<ActionResult> Get(int id)
         {
-            var unit = await this._unitsService.GetOne(id);
-            if (unit == null)
+            var category = await this._categoriesService.GetOne(id);
+            if (category == null)
             {
                 return NoContent();
             }
-            return Ok(unit);
+            return Ok(category);
         }
 
         /// <summary>
-        /// Add unit (ex: Oz, Tbsp, ml, cl)
+        /// Add category 
         /// </summary>
         /// <remarks>
         /// Sample request:
         ///
-        ///     POST /Unit
+        ///     POST /Category
         ///     {
-        ///        "name": "tablespoon",
-        ///        "symbol": "Tbsp"
+        ///        "name": "breakfast",
+        ///        "description": "bk"
         ///     }
         ///     
-        ///     POST /Unit
+        ///     POST /Category
         ///     {
-        ///        "name": "ounce",
-        ///        "symbol": "oz"
+        ///        "name": "fancy dinner",
+        ///        "description": "great for dinner with friends"
         ///     }
         ///
         /// </remarks>
-        /// <param name="input">A unit</param>
+        /// <param name="input">A category</param>
         /// <returns></returns>
-        /// <response code="200">Unit was created</response>
+        /// <response code="200">Category was created</response>
         /// <response code="422">Input cannot be processed</response> 
         /// <response code="409">Input already exists</response> 
         /// <response code="500">Issue on server side</response> 
-        // POST: api/Units
+        // POST: api/Categories
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> Post([FromBody] Unit input)
+        public async Task<ActionResult> Post([FromBody] Category input)
         {
             try
             {
-                var createdEntityId = await this._unitsService.AddOne(input);
+                var createdEntityId = await this._categoriesService.AddOne(input);
                 if (createdEntityId == 0)
                 {
                     return UnprocessableEntity(input);
@@ -118,7 +119,7 @@ namespace RecipesApi.Controllers
             }
             catch (Exception e)
             {
-                // Unit has a constraint in DB on having unique name
+                // Category has a constraint in DB on having unique name
                 if (e.InnerException.ToString().Contains("Duplicate"))
                 {
                     this._logger.LogError($"Exception on input: {JsonConvert.SerializeObject(input)}. Error: {e.InnerException.ToString()}");
@@ -129,40 +130,40 @@ namespace RecipesApi.Controllers
         }
 
         /// <summary>
-        /// Update unit
+        /// Update category
         /// </summary>
-        /// <param name="id">Unit id</param>
-        /// <param name="input">Unit to update</param>
-        /// <response code="200">Unit was updated</response>
+        /// <param name="id">Category id</param>
+        /// <param name="input">Category to update</param>
+        /// <response code="200">Category was updated</response>
         /// <response code="422">Input cannot be processed</response> 
-        // PUT: api/Units/5
+        // PUT: api/Categories/5
         //[HttpPut("{id}")]
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> Put([FromBody] Unit input)
+        public async Task<ActionResult> Put([FromBody] Category input)
         {
-            var isSuccess = await this._unitsService.UpdateOne(input);
+            var isSuccess = await this._categoriesService.UpdateOne(input);
             if (!isSuccess)
             {
                 return UnprocessableEntity(input);
             }
             return Ok();
 
-            //var unit = this._context.Units.Find(input.Unit_Id);     
+            //var category = this._context.Categories.Find(input.Category_Id);     
             // TODO: check if below is bad practice. Context is not scoped here so if object you try to modify is still attached it creates a conflict
 
-            // this._context.Entry<Unit>(unit).State = EntityState.Detached;
-            // this._context.Units.Update(input);
+            // this._context.Entry<Category>(category).State = EntityState.Detached;
+            // this._context.Categories.Update(input);
             //  var result = this._context.SaveChanges();          
         }
 
         /// <summary>
-        /// Delete unit
+        /// Delete category
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        /// <response code="200">Unit was deleted</response>
+        /// <response code="200">Category was deleted</response>
         /// <response code="422">Input cannot be processed</response> 
         // DELETE: api/ApiWithActions/5
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
@@ -171,8 +172,8 @@ namespace RecipesApi.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            // TODO: Consider potentially dangerous cascade delete here. If Unit is deleted it could go delete all ingredients connected to it
-            var isSuccess = await this._unitsService.DeleteOne(id);
+            // TODO: Consider potentially dangerous cascade delete here. If Category is deleted it could go delete all ingredients connected to it
+            var isSuccess = await this._categoriesService.DeleteOne(id);
             if (!isSuccess)
             {
                 return UnprocessableEntity(id);

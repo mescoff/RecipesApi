@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RecipesApi.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RecipesApi.Services
@@ -63,14 +65,19 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="input">The input</param>
         /// <returns></returns>
-        public virtual bool AddOne(T input)
+        public async virtual Task<int> AddOne(T input)
         {
-            var entityToUpdate = this.prepareInputForCreateOrUpdate(input, true);
-            this._context.Set<T>().Add(entityToUpdate);
+            this.prepareInputForCreateOrUpdate(input, true);
+            await this._context.Set<T>().AddAsync(input);
+            //this._context.Set<T>().Add(entityToUpdate);
             // TODO: [Response handling]. If duplicate excetion thrown: handle properly and return conflict
             var result = this._context.SaveChanges();
             // TODO: return created object in future
-            return result > 0;
+            if (result > 0)
+            {
+                return input.Id;
+            }
+            return 0;
         }
 
         /// <summary>
@@ -78,11 +85,15 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="input"></para
         /// <returns></returns>
-        public virtual bool UpdateOne(T input)
+        // TODO: make async
+        public async virtual Task<bool> UpdateOne(T input)
         {
             // TODO: return error message for below
-            if (this._context.Set<T>().Find(input.Id) == null) { return false; } // TODO: Return meaningful response
-            var entityToUpdate = this.prepareInputForCreateOrUpdate(input, false);
+            var entityToUpdate = await this._context.Set<T>().FindAsync(input.Id);
+            if (entityToUpdate == null) { return false; } // TODO: Return meaningful response
+            this._context.Entry<T>(entityToUpdate).State = EntityState.Detached;
+            //if ( ! this._context.Set<T>().ToList().Any(r => r.Id == input.Id)) { return false; } // TODO: Return meaningful response
+            this.prepareInputForCreateOrUpdate(input, false);
             this._context.Set<T>().Update(input); 
             var result = this._context.SaveChanges();
             return result > 0;         
@@ -93,11 +104,11 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public virtual bool DeleteOne(int id)
+        public async virtual Task<bool> DeleteOne(int id)
         {
             // TODO: Consider disabling Cascade delete on DB side and deleting all depenencies manually
             // to allow logging of potential exceptions on the way
-            var entityToDelete = this._context.Set<T>().Find(id);
+            var entityToDelete = await this._context.Set<T>().FindAsync(id);
             if (entityToDelete != null)
             {
                 this._context.Set<T>().Remove(entityToDelete);
@@ -113,7 +124,7 @@ namespace RecipesApi.Services
         /// <param name="input">The input</param>
         /// <param name="isCreation">Is it a creation or update</param>
         /// <returns></returns>
-        protected abstract T prepareInputForCreateOrUpdate(T input, bool isCreation);
+        protected abstract void prepareInputForCreateOrUpdate(T input, bool isCreation);
 
         public void Dispose()
         {
