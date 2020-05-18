@@ -23,13 +23,12 @@ namespace RecipesApi.Services
         /// <param name="input">The unit</param>
         /// <param name="isCreation">Is it a creation or update</param>
         /// <returns></returns>
-        protected override Unit prepareInputForCreateOrUpdate(Unit input, bool isCreation)
+        protected override void prepareInputForCreateOrUpdate(Unit input, bool isCreation)
         {
             if (isCreation)
             {
                 input.Id = 0;
             }
-            return input;
         }
     }
 }

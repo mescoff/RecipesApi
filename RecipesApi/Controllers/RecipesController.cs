@@ -98,15 +98,15 @@ namespace RecipesApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Post([FromBody] Recipe input)
+        public async Task<ActionResult> Post([FromBody] Recipe input)
         {
             //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
-            var isSuccess = this._recipesService.AddOne(input);
-            if (!isSuccess)
+            var createdEntityId = await this._recipesService.AddOne(input);
+            if (createdEntityId == 0)
             {
                 return UnprocessableEntity(input);
             }
-            return Ok();
+            return Ok($"Object added. ID:{createdEntityId}");
         }
 
         /// <summary>
@@ -121,10 +121,11 @@ namespace RecipesApi.Controllers
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Put([FromBody] Recipe input)
+      
+        public async Task<ActionResult> Put([FromBody] Recipe input)
         {
             //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
-            var isSuccess = this._recipesService.UpdateOne(input);
+            var isSuccess = await this._recipesService.UpdateOne(input);
             if (!isSuccess)
             {
                 return UnprocessableEntity(input);
@@ -143,9 +144,9 @@ namespace RecipesApi.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult Delete(int id)
+        public async Task<ActionResult> Delete(int id)
         {
-            var isSuccess = this._recipesService.DeleteOne(id);
+            var isSuccess = await this._recipesService.DeleteOne(id);
             if (!isSuccess)
             {
                 // TODO: this should return diff error depending on if couldn't remove or couldn't find

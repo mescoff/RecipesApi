@@ -11,7 +11,7 @@ namespace RecipesApi.Models
     {
         [Key]
         [Column("Recipe_Id")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // TODO: does not work if value is provided as expected. But see prettier way of just making id 0 on creation...
         public int Id { get; set; }
 
         [Required]
@@ -32,11 +32,13 @@ namespace RecipesApi.Models
         [StringLength(500)]
         public string LastModifier { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime? AuditDate { get; set; }
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+
+        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime? CreationDate { get; set; }
 
         public IEnumerable<Ingredient> Ingredients { get; set; }
+        public IEnumerable<Media> Media { get; set; }
     }
 }

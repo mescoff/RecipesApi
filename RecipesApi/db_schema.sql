@@ -5,8 +5,8 @@ CREATE TABLE Recipes(
     TitleLong varchar(150),
     Description varchar(2000) NOT NULL ,
     OriginalLink varchar(500),
-    CreationDate TIMESTAMP DEFAULT NOW();
-    AuditDate TIMESTAMP DEFAULT NOW();
+    CreationDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    AuditDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
     LastModifier varchar(150) NOT NULL;
     PRIMARY KEY (Recipe_Id)
 );
@@ -37,12 +37,13 @@ CREATE TABLE recipe_ingredients(
     FOREIGN KEY (Unit_Id) REFERENCES units(Unit_Id) ON DELETE CASCADE
 );
 
-CREATE TABLE recipe_images(
-	RecipeImg_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
-    Image_path varchar(200) NOT NULL,
+CREATE TABLE recipe_media(
+	RecipeMedia_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
+    MediaPath varchar(200) NOT NULL,
     Title varchar(200) NOT NULL,
+    Tag varchar(50),
     Recipe_Id INT,
-    PRIMARY KEY (RecipeImg_Id),
+    PRIMARY KEY (RecipeMedia_Id),
     FOREIGN KEY (Recipe_Id) REFERENCES recipes(Recipe_Id) ON DELETE CASCADE
 );
 
@@ -58,7 +59,7 @@ CREATE TABLE recipe_categories(
 CREATE TABLE recipe_instructions(
 	RecipeInst_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
     StepNum INT NOT NULL,
-    Instruction varchar(500) NOT NULL,
+    Description varchar(500) NOT NULL,
     Recipe_Id INT,
     PRIMARY KEY (RecipeInst_Id),
     FOREIGN KEY (Recipe_Id) REFERENCES Recipes(Recipe_Id) ON DELETE CASCADE

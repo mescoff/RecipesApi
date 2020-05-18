@@ -9,100 +9,94 @@ using RecipesApi.Models;
 
 namespace RecipesApi.Controllers
 {
+
     /// <summary>
-    /// Ingredients controller
+    /// medias controller
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    public class IngredientsController : ControllerBase
+    public class MediaController : ControllerBase
     {
 
-        private readonly IEntityService<Ingredient> _ingredientsService;
+        private readonly IEntityService<Media> _mediaService;
         private readonly IMapper _mapper;
 
         /// <summary>
-        /// Ingredients Controllers
+        /// All recipe media (photos, videos, logo) Controller
         /// </summary>
-        /// <param name="ingredientsService">The ingredients service</param>
+        /// <param name="mediaService">The medias service</param>
         /// <param name="mapper">The mapper</param>
-        public IngredientsController(IEntityService<Ingredient> ingredientsService, IMapper mapper)
+        public MediaController(IEntityService<Media> mediaService, IMapper mapper)
         {
-            this._ingredientsService = ingredientsService;
+            this._mediaService = mediaService;
             this._mapper = mapper;
         }
 
 
         /// <summary>
-        /// Get Ingredients
+        /// Get medias
         /// </summary>    
         /// <returns></returns>
         /// <response code="200">Returns found item</response>
         /// <response code="204">No items found</response>
-        // GET: api/Ingredients
-        [HttpGet(Name = "GetIngredients")]
+        // GET: api/medias
+        [HttpGet(Name = "GetAllRecipeMedia")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAll()
         {
             //TODO: Get set in more generic way (https://stackoverflow.com/questions/21533506/find-a-specified-generic-dbset-in-a-dbcontext-dynamically-when-i-have-an-entity)
-            var ingredients = this._ingredientsService.GetAll().ToList();
-            if (ingredients.Count == 0)
+            var medias = this._mediaService.GetAll().ToList();
+            if (medias.Count == 0)
             {
                 return NoContent();
             }
-            this.AddCountToHeader(ingredients);
-            return Ok(this._mapper.Map<List<Ingredient>, List<IngredientDto>>(ingredients));
+            this.AddCountToHeader(medias);
+            return Ok(this._mapper.Map<List<Media>, List<MediaDto>>(medias));
         }
 
         /// <summary>
-        /// Get 1 ingredient by id
+        /// Get 1 media by id
         /// </summary>
-        /// <param name="id">Ingredient id</param>
+        /// <param name="id">media id</param>
         /// <returns>unit</returns>
         /// <response code="200">Returns found item</response>
         /// <response code="204">No items found</response>
-        // GET: api/Units/5
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        // GET: api/Ingredients/5
-        [HttpGet("{id}", Name = "GetIngredient")]
+        // GET: api/medias/5
+        [HttpGet("{id}", Name = "GetRecipeMedia")]
         public async Task<ActionResult> Get(int id)
         {
-            var ingredient = await this._ingredientsService.GetOne(id);
-            if (ingredient == null)
+            var media = await this._mediaService.GetOne(id);
+            if (media == null)
             {
                 return NoContent();
             }
-            return Ok(this._mapper.Map<Ingredient,IngredientDto>(ingredient));
+            return Ok(this._mapper.Map<Media, MediaDto>(media));
         }
 
         /// <summary>
-        /// Add Ingredient
+        /// Add media
         /// </summary>
         /// <remarks>
-        /// {
-        ///     "recipeIng_Id": 0,
-        ///     "name": "Olive oil",
-        ///     "quantity": 10,
-        ///     "recipe_Id": 3,
-        ///     "unit_Id": 2
-        /// }
+
         /// </remarks> 
-        /// <param name="input">Ingredient</param>
+        /// <param name="input">media</param>
         /// <returns></returns>
-        /// <response code="200">Ingredient was created</response>
+        /// <response code="200">media was created</response>
         /// <response code="422">Input cannot be processed</response> 
-        // POST: api/Ingredients
+        // POST: api/medias
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> Post([FromBody] IngredientDto input)
+        public async Task<ActionResult> Post([FromBody] MediaDto input)
         {
             //TODO: add standard on naming
-            var ingredient = this._mapper.Map<IngredientDto, Ingredient>(input);
-            var createdEntityId = await this._ingredientsService.AddOne(ingredient);
-            // this._context.Ingredients.Add(ingredient);
-            // FIXME: Bug on saving new ingredient..
+            var media = this._mapper.Map<MediaDto, Media>(input);
+            var createdEntityId = await this._mediaService.AddOne(media);
+            // this._context.medias.Add(media);
+            // FIXME: Bug on saving new media..
             // var result = this._context.SaveChanges();
             if (createdEntityId == 0)
             {
@@ -112,20 +106,20 @@ namespace RecipesApi.Controllers
         }
 
         /// <summary>
-        /// Update ingredient
+        /// Update media
         /// </summary>
-        /// <param name="input">Ingredient to update</param>
+        /// <param name="input">media to update</param>
         /// <returns></returns>
-        /// <response code="200">Ingredient was updated</response>
+        /// <response code="200">media was updated</response>
         /// <response code="422">Input cannot be processed</response> 
-        // PUT: api/Ingredients/5
+        // PUT: api/medias/5
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> Put([FromBody] IngredientDto input)
+        public async Task<ActionResult> Put([FromBody] MediaDto input)
         {
-            var ingredient = this._mapper.Map<IngredientDto, Ingredient>(input);
-            var isSuccess = await this._ingredientsService.UpdateOne(ingredient);
+            var media = this._mapper.Map<MediaDto, Media>(input);
+            var isSuccess = await this._mediaService.UpdateOne(media);
             if (!isSuccess)
             {
                 return UnprocessableEntity(input);
@@ -134,17 +128,17 @@ namespace RecipesApi.Controllers
         }
 
         /// <summary>
-        /// Delete ingredient
+        /// Delete media
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        /// <response code="200">Ingredient was deleted</response>
+        /// <response code="200">media was deleted</response>
         /// <response code="422">Input cannot be processed</response> 
-        //// DELETE: api/ApiWithActions/5
+        //// DELETE: api/medias/5
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var isSuccess = await this._ingredientsService.DeleteOne(id);
+            var isSuccess = await this._mediaService.DeleteOne(id);
             if (!isSuccess)
             {
                 // TODO: this should return diff error depending on if couldn't remove or couldn't find
@@ -152,5 +146,6 @@ namespace RecipesApi.Controllers
             }
             return Ok();
         }
+
     }
 }

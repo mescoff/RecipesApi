@@ -11,6 +11,8 @@ namespace RecipesApi.Utils
         {
             CreateMap<Ingredient, IngredientDto>();
             CreateMap<IngredientDto, Ingredient>();
+            CreateMap<MediaDto, Media>();
+            CreateMap<Media, MediaDto>();
             //CreateMap<Recipe, RecipeBaseDto>();
             //CreateMap<RecipeBaseDto, Recipe>();
         }

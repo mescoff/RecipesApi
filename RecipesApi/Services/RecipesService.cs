@@ -23,13 +23,13 @@ namespace RecipesApi
 
         public  override IEnumerable<Recipe> GetAll()
         {
-            var result = this._context.Set<Recipe>().Include(r => r.Ingredients).ThenInclude(i => i.Unit);
+            var result = this._context.Set<Recipe>().Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit);
             return result;
         }
 
         public async override Task<Recipe> GetOne(int id)
-        {               
-            var result = await this._context.Set<Recipe>().Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
+        {
+            var result = await this._context.Set<Recipe>().Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
             return result;
         }
 
@@ -38,38 +38,44 @@ namespace RecipesApi
         /// </summary>
         /// <param name="recipe">The recipe</param>
         /// <returns></returns>
-        protected override Recipe prepareInputForCreateOrUpdate(Recipe input, bool isCreation)
+        protected override void prepareInputForCreateOrUpdate(Recipe input, bool isCreation)
         {
             if (isCreation)
             {
                 //// CREATION
                 // Clearing some properties for DB insert
                 input.Id = 0;
-                input.CreationDate = null;
-                input.AuditDate = null;
-
-                // Check for possible duplicate ingredients  
-                var updatedRecipeIngredients = new HashSet<int>(input.Ingredients.Select(i => i.Id));
-                if (updatedRecipeIngredients.Count() < input.Ingredients.Count())
+             
+                if (input.Ingredients != null)
                 {
-                    throw new DuplicateNameException($"You provided a recipe with duplicate ingredients ID"); // TODO: pick up throw in nicer way 
+                    foreach (var ingredient in input.Ingredients)
+                    {
+                        // clear Unid, recipeId and Id to be safe
+                        ingredient.Id = 0;
+                        ingredient.Recipe_Id = 0;
+                        ingredient.Unit = null;
+                        // TODO: Shouldn't Recipe also be cleared?
+                    }
+                }
+                if (input.Media != null)
+                {
+                    foreach (var media in input.Media)
+                    {
+                        media.Id = 0;
+                        media.Recipe_Id = 0;
+                        media.Recipe = null;
+                    }
                 }
 
-                foreach (var ingredient in input.Ingredients)
-                {
-                    // clear Unid, recipeId and Id to be safe
-                    ingredient.Id = 0;
-                    ingredient.Recipe_Id = 0;
-                    ingredient.Unit = null;
-                }
             }
             else
             {
                 //// UPDATE
                 this._logger.LogInformation($"Updating Recipe w/ ID: {input.Id}");
-                input.AuditDate = DateTime.Now;
-                var dbRecipe = this._context.Set<Recipe>().Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == input.Id); // TODO: make async
+                //input.AuditDate = DateTime.Now;
+                var dbRecipe = this._context.Set<Recipe>().Include(r=> r.Media).Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == input.Id); // TODO: make async
 
+                ///// INGREDIENTS
                 // Check for possible duplicate ingredients  
                 var updatedRecipeIngredients = new HashSet<int>(input.Ingredients.Select(i => i.Id));
                 if (updatedRecipeIngredients.Count() < input.Ingredients.Count())
@@ -92,8 +98,25 @@ namespace RecipesApi
                     this._context.Set<Ingredient>().Remove(dbIng);
                     this._logger.LogInformation($"Deleting Ingredient with Id:{dbIng.Id} and Name:{dbIng.Name} on Recipe ID: {input.Id}");
                 }
+
+                ///// MEDIA
+                // Check for possible duplicate media  
+                var updatedRecipeMedia = new HashSet<int>(input.Media.Select(i => i.Id));
+                if (updatedRecipeMedia.Count() < input.Media.Count())
+                {
+                    throw new DuplicateNameException($"You provided a recipe with duplicate media ID"); // TODO: pick up throw in nicer way 
+                }
+
+                // Check for removed media and delete them
+                var dbRecipeMedias = dbRecipe.Media == null ? null : new HashSet<int>(dbRecipe.Media.Select(i => i.Id));
+                var ingMissingInUpdatedMedia = updatedRecipeMedia == null ? dbRecipeMedias : dbRecipeMedias.Where(i => !updatedRecipeMedia.Contains(i)); // list of ingredients IDs missing from updated Recipe and need to remove
+                foreach (var id in ingMissingInUpdatedMedia)
+                {
+                    var dbMedia = this._context.Set<Media>().Find(id); // there should not be any doubt that it's there
+                    this._context.Set<Media>().Remove(dbMedia);
+                    this._logger.LogInformation($"Deleting Ingredient with Id:{dbMedia.Id} and Name:{dbMedia.Title} on Recipe ID: {input.Id}");
+                }
             }
-            return input;
         }
     }
 }

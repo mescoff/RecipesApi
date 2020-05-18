@@ -106,7 +106,7 @@ namespace RecipesApi.Tests.Controller
             using (var recipeService = setupService(dbContext))
             {
                 var recipe = new Recipe { Id = 780, TitleShort = "Some recipe" };
-                var result = recipeService.UpdateOne(recipe);
+                var result = await recipeService.UpdateOne(recipe);
                 Assert.IsFalse(result); // TODO: not sufficiant. Get real error msg to work in Service
             }
         }
@@ -168,7 +168,7 @@ namespace RecipesApi.Tests.Controller
             var dbContext = await TestUtils.GetRecipesContext();
             using (var recipeService = setupService(dbContext))
             {
-                var result = recipeService.DeleteOne(909);
+                var result = await recipeService.DeleteOne(909);
                 Assert.IsFalse(result);
             }
         }
@@ -177,13 +177,14 @@ namespace RecipesApi.Tests.Controller
         public void Test_PostWithRecipeUpdateAndIngredientsUpdateAndDeleteWorks()
         {
             var options = new DbContextOptionsBuilder<DbContext>()
-                  .UseInMemoryDatabase("PostRecipe")
+                  .UseInMemoryDatabase("PostRecipe") //.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+                  .EnableSensitiveDataLogging()
                   .Options;
+
             using (var recipeContext = new DbContext(options))
             {
 
                 // TODO: MOCK ALL BELOW. 
-                
                 var recipe = new Recipe
                 {
                     Id = 0,
@@ -194,11 +195,14 @@ namespace RecipesApi.Tests.Controller
                     }
                 };
                 recipeContext.Set<Recipe>().Add(recipe);
+                // recipeContext.Entry<Recipe>(recipe).State = EntityState.Detached;
                 recipeContext.SaveChanges();
+
             }
             using (var recipeContext = new DbContext(options))
             {
                 var recipeService = setupService(recipeContext);
+                var recipes = recipeContext.Set<Recipe>().ToList();
                 // New recipe with same ID and updates to ingredients
                 var recipe = new Recipe
                 {
@@ -208,8 +212,8 @@ namespace RecipesApi.Tests.Controller
                     TitleShort = "French Crepes with brown butter",
                     Ingredients = new List<Ingredient> { new Ingredient { Id = 3, Name = "Flour", Quantity = 6, Unit_Id = 1 }, new Ingredient { Id = 4, Name = "Sugar", Quantity = 3, Unit_Id = 1 }
                     }
-                }; 
-          
+                };
+
                 recipeService.UpdateOne(recipe);
                 var updatedRecipe = recipeContext.Set<Recipe>().Include(r => r.Ingredients).FirstOrDefault(r => r.Id == recipe.Id);
                 Assert.AreNotEqual(updatedRecipe.AuditDate, recipe.AuditDate);
