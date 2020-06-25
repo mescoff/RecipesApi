@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace RecipesApi.Services
@@ -15,7 +16,9 @@ namespace RecipesApi.Services
     /// <typeparam name="T">The type/object handled by the service</typeparam>
     public abstract class EntityService<T> : IEntityService<T> where T: class, ICustomModel
     {
-        protected readonly DbContext _context;
+
+        protected readonly DbContext Context;
+        protected readonly DbSet<T> Entities;
         protected readonly ILogger _logger;
 
         /// <summary>
@@ -25,7 +28,8 @@ namespace RecipesApi.Services
         /// <param name="logger">The logger</param>
         public EntityService(DbContext context, ILogger<EntityService<T>> logger)
         {
-            this._context = context;
+            this.Context = context ?? throw new ArgumentNullException(nameof(context));
+            this.Entities = this.Context.Set<T>() ?? throw new ArgumentNullException(nameof(context));
             this._logger = logger;
 
             try
@@ -46,7 +50,7 @@ namespace RecipesApi.Services
         /// <returns></returns>
         public virtual IEnumerable<T> GetAll()
         {
-            return this._context.Set<T>();
+            return this.Entities;
         }
 
         /// <summary>
@@ -56,7 +60,7 @@ namespace RecipesApi.Services
         /// <returns></returns>
         public async virtual Task<T> GetOne(int id)
         {
-            var result = await this._context.Set<T>().FindAsync(id);
+            var result = await this.Entities.FindAsync(id);
             return result;
         }
 
@@ -67,17 +71,28 @@ namespace RecipesApi.Services
         /// <returns></returns>
         public async virtual Task<int> AddOne(T input)
         {
-            this.prepareInputForCreateOrUpdate(input, true);
-            await this._context.Set<T>().AddAsync(input);
-            //this._context.Set<T>().Add(entityToUpdate);
-            // TODO: [Response handling]. If duplicate excetion thrown: handle properly and return conflict
-            var result = this._context.SaveChanges();
-            // TODO: return created object in future
-            if (result > 0)
+            try
             {
-                return input.Id;
+                this.prepareInputForCreateOrUpdate(input, true);
+                await this.Entities.AddAsync(input);
+                //this._context.Set<T>().Add(entityToUpdate);
+                // TODO: [Response handling]. If duplicate excetion thrown: handle properly and return conflict
+                var result = this.Context.SaveChanges();
+                _logger.LogInformation($"Entity succesfully saved to DB: Entity={input}");
+                // TODO: return created object in future
+                if (result > 0)
+                {
+                    return input.Id;
+                }
+                return 0;
             }
-            return 0;
+            catch(Exception e)
+            {
+                this.Entities.Remove(input);
+                var errorMessage = $"Error while saving entity. Rolling back changes: Entity={input} ErrorMessage={e.InnerException?.Message}";
+                _logger.LogError(errorMessage);
+                return -1;
+            }
         }
 
         /// <summary>
@@ -85,18 +100,33 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="input"></para
         /// <returns></returns>
-        // TODO: make async
         public async virtual Task<bool> UpdateOne(T input)
         {
-            // TODO: return error message for below
-            var entityToUpdate = await this._context.Set<T>().FindAsync(input.Id);
-            if (entityToUpdate == null) { return false; } // TODO: Return meaningful response
-            this._context.Entry<T>(entityToUpdate).State = EntityState.Detached;
-            //if ( ! this._context.Set<T>().ToList().Any(r => r.Id == input.Id)) { return false; } // TODO: Return meaningful response
-            this.prepareInputForCreateOrUpdate(input, false);
-            this._context.Set<T>().Update(input); 
-            var result = this._context.SaveChanges();
-            return result > 0;         
+            try
+            {
+                //var entityToUpdate = await this.Entities.FindAsync(input.Id);
+                //if (entityToUpdate == null) { return false; } // TODO: Return meaningful response
+                //this.Context.Entry<T>(entityToUpdate).State = EntityState.Detached;
+                //this.prepareInputForCreateOrUpdate(input, false);
+                //this.Entities.Update(input);
+                //var result = this.Context.SaveChanges();
+
+                // TODO: CHECK that removing the prepareInputForCreateOrUpdate doesn't break everything for Recipe Service...
+
+
+                // Here we'd do (instead of everything above
+                this.Context.Entry(input).State = EntityState.Modified;
+                // Then save
+                var result = this.Context.SaveChanges();
+                return result > 0;
+            }
+            catch(Exception e)
+            {
+                this.Context.Entry(input).State = EntityState.Unchanged;
+                var errorMessage = $"Error while updating entity. Rolling back changes: Entity={input} ErrorMessage={e.InnerException?.Message}";
+                _logger.LogError(errorMessage);
+                return false;
+            }
         }
 
         /// <summary>
@@ -108,11 +138,11 @@ namespace RecipesApi.Services
         {
             // TODO: Consider disabling Cascade delete on DB side and deleting all depenencies manually
             // to allow logging of potential exceptions on the way
-            var entityToDelete = await this._context.Set<T>().FindAsync(id);
+            var entityToDelete = await this.Entities.FindAsync(id);
             if (entityToDelete != null)
             {
-                this._context.Set<T>().Remove(entityToDelete);
-                var result = this._context.SaveChanges();
+                this.Entities.Remove(entityToDelete);
+                var result = this.Context.SaveChanges();
                 return result > 0;
             }
             return false;
