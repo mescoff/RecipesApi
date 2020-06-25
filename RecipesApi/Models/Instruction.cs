@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
@@ -24,6 +24,11 @@ namespace RecipesApi.Models
         [ForeignKey("Recipe_Id")]
         [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
         public Recipe Recipe { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
 
     }
 }

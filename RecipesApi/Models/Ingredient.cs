@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
@@ -32,6 +32,11 @@ namespace RecipesApi.Models
 
         [ForeignKey("Unit_Id")]
         public Unit Unit { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
         //public virtual Unit Unit { get; set; }
     }
 }

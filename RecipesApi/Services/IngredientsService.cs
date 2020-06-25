@@ -15,13 +15,13 @@ namespace RecipesApi.Services
         public override IEnumerable<Ingredient> GetAll()
         {
             
-            var result = this._context.Set<Ingredient>().Include(r => r.Unit);
+            var result = this.Entities.Include(r => r.Unit);
             return result;
         }
 
         public async override Task<Ingredient> GetOne(int id)
         {
-            var result = await this._context.Set<Ingredient>().Include(r => r.Unit).SingleOrDefaultAsync(r => r.Id == id);
+            var result = await this.Entities.Include(r => r.Unit).SingleOrDefaultAsync(r => r.Id == id);
             return result;
         }
 

@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
@@ -23,6 +23,11 @@ namespace RecipesApi.Models
 
         [ForeignKey("Category_Id")]
         public Category Category { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
 
     }
 }

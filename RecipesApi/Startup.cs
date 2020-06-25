@@ -45,6 +45,7 @@ namespace RecipesApi
             services.AddDbContext<DbContext>(options =>
                 //.UseLazyLoadingProxies()
                 options
+                    .UseLoggerFactory(ConsoleLoggerFactory)
                     .EnableSensitiveDataLogging(true)
                     .UseMySql(
                     Configuration.GetConnectionString("DefaultConnection"), 
@@ -97,5 +98,12 @@ namespace RecipesApi
                 endpoints.MapControllers();
             });
         }
+
+        private static readonly ILoggerFactory ConsoleLoggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddFilter((category, level) =>
+            category == DbLoggerCategory.Database.Command.Name && level == LogLevel.Information)
+            .AddConsole();
+        });
     }
 }

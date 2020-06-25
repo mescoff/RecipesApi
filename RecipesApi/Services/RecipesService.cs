@@ -23,13 +23,13 @@ namespace RecipesApi
 
         public  override IEnumerable<Recipe> GetAll()
         {
-            var result = this._context.Set<Recipe>().Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit);
+            var result = this.Entities.Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit);
             return result;
         }
 
         public async override Task<Recipe> GetOne(int id)
         {
-            var result = await this._context.Set<Recipe>().Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
+            var result = await this.Entities.Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
             return result;
         }
 
@@ -73,7 +73,7 @@ namespace RecipesApi
                 //// UPDATE
                 this._logger.LogInformation($"Updating Recipe w/ ID: {input.Id}");
                 //input.AuditDate = DateTime.Now;
-                var dbRecipe = this._context.Set<Recipe>().Include(r=> r.Media).Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == input.Id); // TODO: make async
+                var dbRecipe = this.Entities.Include(r=> r.Media).Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == input.Id); // TODO: make async
 
                 ///// INGREDIENTS
                 // Check for possible duplicate ingredients  
@@ -94,8 +94,8 @@ namespace RecipesApi
                 var ingMissingInUpdatedRecipe = dbRecipeIngredients.Where(i => !updatedRecipeIngredients.Contains(i)); // list of ingredients IDs missing from updated Recipe and need to remove
                 foreach(var id in ingMissingInUpdatedRecipe)
                 {
-                    var dbIng = this._context.Set<Ingredient>().Find(id); // there should not be any doubt that it's there
-                    this._context.Set<Ingredient>().Remove(dbIng);
+                    var dbIng = this.Context.Set<Ingredient>().Find(id); // there should not be any doubt that it's there
+                    this.Context.Set<Ingredient>().Remove(dbIng);
                     this._logger.LogInformation($"Deleting Ingredient with Id:{dbIng.Id} and Name:{dbIng.Name} on Recipe ID: {input.Id}");
                 }
 
@@ -112,8 +112,8 @@ namespace RecipesApi
                 var ingMissingInUpdatedMedia = updatedRecipeMedia == null ? dbRecipeMedias : dbRecipeMedias.Where(i => !updatedRecipeMedia.Contains(i)); // list of ingredients IDs missing from updated Recipe and need to remove
                 foreach (var id in ingMissingInUpdatedMedia)
                 {
-                    var dbMedia = this._context.Set<Media>().Find(id); // there should not be any doubt that it's there
-                    this._context.Set<Media>().Remove(dbMedia);
+                    var dbMedia = this.Context.Set<Media>().Find(id); // there should not be any doubt that it's there
+                    this.Context.Set<Media>().Remove(dbMedia);
                     this._logger.LogInformation($"Deleting Ingredient with Id:{dbMedia.Id} and Name:{dbMedia.Title} on Recipe ID: {input.Id}");
                 }
             }
