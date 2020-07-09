@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace RecipesApi.Models
 {
@@ -19,9 +20,11 @@ namespace RecipesApi.Models
         [MaxLength(300)]
         public string Description { get; set; }
 
+        //public IEnumerable<RecipeCategory> RecipeCategories { get; set; }
+
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerializer.Serialize(this);
         }
     }
 }

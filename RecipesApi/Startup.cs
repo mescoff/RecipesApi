@@ -52,9 +52,11 @@ namespace RecipesApi
                     mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
                 );
             services.AddScoped<IEntityService<Recipe>,RecipesService>();
+            services.AddScoped<IEntityService<Category>,CategoryService>();
             services.AddScoped<IEntityService<Ingredient>,IngredientsService>();
             services.AddScoped<IEntityService<Unit>,UnitsService>();
             services.AddScoped<IEntityService<Media>,MediaService>();
+            services.AddScoped<IEntityService<Instruction>,InstructionsService>();
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {

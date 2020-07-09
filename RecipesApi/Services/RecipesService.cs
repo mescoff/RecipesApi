@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using RecipesApi.Models;
 using RecipesApi.Services;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -23,13 +22,13 @@ namespace RecipesApi
 
         public  override IEnumerable<Recipe> GetAll()
         {
-            var result = this.Entities.Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit);
+            var result = this.Entities.Include(r => r.Media).Include(r => r.RecipeCategories).ThenInclude(i => i.Category).Include(r => r.Instructions).Include(r => r.Ingredients).ThenInclude(i => i.Unit);
             return result;
         }
 
         public async override Task<Recipe> GetOne(int id)
         {
-            var result = await this.Entities.Include(r => r.Media).Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
+            var result = await this.Entities.Include(r => r.Media).Include(r => r.RecipeCategories).ThenInclude(i => i.Category).Include(r => r.Instructions).Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
             return result;
         }
 
