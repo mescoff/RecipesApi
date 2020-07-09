@@ -11,18 +11,23 @@ namespace RecipesApi
         }
 
         public DbSet<Recipe> Recipes { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<RecipeCategory> RecipeCategories { get; set; }
         public DbSet<Unit> Units { get; set; }
+        public DbSet<Instruction> Instructions { get; set; }
         public DbSet<Ingredient> Ingredients { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Recipe>() ;
-
+            modelBuilder.Entity<Recipe>();
+                ;
+            modelBuilder.Entity<Category>() ;
+            //modelBuilder.Entity<RecipeCategory>();
             modelBuilder.Entity<Unit>();
-
-            // TODO: Below migh not be needed
+            //modelBuilder.Entity<Instruction>();
             modelBuilder.Entity<Ingredient>();
             //modelBuilder.Entity<Ingredient>(entity =>
             //{

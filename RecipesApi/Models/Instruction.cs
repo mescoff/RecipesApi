@@ -1,9 +1,11 @@
-﻿using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
+    [Table("recipe_instructions")]
     public class Instruction : ICustomModel
     {
         [Key]
@@ -27,7 +29,7 @@ namespace RecipesApi.Models
 
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerializer.Serialize(this);
         }
 
     }

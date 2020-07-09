@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 namespace RecipesApi.Models
 {
@@ -16,7 +16,7 @@ namespace RecipesApi.Models
         public int Id { get; set; }
 
         [Required]
-        [StringLength(50, MinimumLength = 10)]
+        [StringLength(50, MinimumLength = 5)]
         public string TitleShort { get; set; }
 
         [StringLength(150)]
@@ -41,10 +41,11 @@ namespace RecipesApi.Models
 
         public IEnumerable<Ingredient> Ingredients { get; set; }
         public IEnumerable<Media> Media { get; set; }
-
+        public IEnumerable<Instruction> Instructions { get; set; }
+        public IEnumerable<RecipeCategory> RecipeCategories { get; set; }
         public override string ToString()
         {
-            return JsonConvert.SerializeObject(this);
+            return JsonSerializer.Serialize(this);
         }
     }
 }
