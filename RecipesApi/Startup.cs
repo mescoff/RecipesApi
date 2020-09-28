@@ -53,6 +53,7 @@ namespace RecipesApi
                 );
             services.AddScoped<IEntityService<Recipe>,RecipesService>();
             services.AddScoped<IEntityService<Category>,CategoryService>();
+            services.AddScoped<IEntityService<RecipeCategory>, RecipeCategoryService>();
             services.AddScoped<IEntityService<Ingredient>,IngredientsService>();
             services.AddScoped<IEntityService<Unit>,UnitsService>();
             services.AddScoped<IEntityService<Media>,MediaService>();

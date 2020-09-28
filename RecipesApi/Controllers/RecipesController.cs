@@ -5,6 +5,9 @@ using System.Linq;
 using RecipesApi.Models;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
+using RecipesApi.DTOs.Recipes;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace RecipesApi.Controllers
 {
@@ -39,14 +42,15 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> GetAll() {
-            var recipes =  this._recipesService.GetAll().ToList(); 
-            if (recipes.Count == 0)
+            var recipes = this._recipesService.GetAll();
+            if (recipes.Count() == 0)
             {
                 return NoContent();
             }
+            var recipesMapped = this._mapper.Map<IEnumerable<Recipe>, IEnumerable<GetRecipeDto>>(recipes);
             this.AddCountToHeader(recipes);
             //return Ok(this._mapper.Map<List<RecipeBase>, List<RecipeBaseDto>>(recipes));
-            return Ok(recipes);
+            return Ok(recipesMapped);
         }
 
         /// <summary>
@@ -67,8 +71,9 @@ namespace RecipesApi.Controllers
             {
                 return NoContent();
             }
+            var recipeMapped = this._mapper.Map<Recipe, GetRecipeDto>(recipe);
             //return Ok(this._mapper.Map<RecipeBase,RecipeBaseDto>(recipe));
-            return Ok(recipe);
+            return Ok(recipeMapped);
         }
 
         /// <summary>
@@ -101,12 +106,13 @@ namespace RecipesApi.Controllers
         public async Task<ActionResult> Post([FromBody] Recipe input)
         {
             //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
-            var createdEntityId = await this._recipesService.AddOne(input);
-            if (createdEntityId == 0)
+            var response = await this._recipesService.AddOne(input);
+            if (!response.Success)
             {
-                return UnprocessableEntity(input);
+                return UnprocessableEntity(response);
             }
-            return Ok($"Object added. ID:{createdEntityId}");
+            //return Ok($"Object added. ID:{createdEntityId}");
+            return Ok(response);
         }
 
         /// <summary>

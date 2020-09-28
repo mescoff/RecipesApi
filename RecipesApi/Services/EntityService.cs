@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using RecipesApi.Models;
+using RecipesApi.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -39,7 +40,7 @@ namespace RecipesApi.Services
             }
             catch (Exception e)
             {
-                this._logger.LogError("Something happened", e);
+                this._logger.LogError($"Something happened: {e.InnerException}", e.InnerException);
                 throw e;
             }
         }
@@ -69,8 +70,9 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="input">The input</param>
         /// <returns></returns>
-        public async virtual Task<int> AddOne(T input)
+        public async virtual Task<ServiceResponse<T>> AddOne(T input)
         {
+            var response = new ServiceResponse<T>();
             try
             {
                 this.prepareInputForCreateOrUpdate(input, true);
@@ -82,17 +84,22 @@ namespace RecipesApi.Services
                 // TODO: return created object in future
                 if (result > 0)
                 {
-                    return input.Id;
+                    input.Id = result;
+                    response.Success = true;
+                    response.Message = "Object created";
+                    response.Content = input;
+                    return response;
                 }
-                return 0;
+                response.Message = "Object could not be created";
             }
             catch(Exception e)
-            {
+            {             
                 this.Entities.Remove(input);
                 var errorMessage = $"Error while saving entity. Rolling back changes: Entity={input} ErrorMessage={e.InnerException?.Message}";
                 _logger.LogError(errorMessage);
-                return -1;
+                response.Message = errorMessage;
             }
+            return response;
         }
 
         /// <summary>

@@ -100,15 +100,16 @@ namespace RecipesApi.Controllers
         {
             //TODO: add standard on naming
             var ingredient = this._mapper.Map<IngredientDto, Ingredient>(input);
-            var createdEntityId = await this._ingredientsService.AddOne(ingredient);
+            var response = await this._ingredientsService.AddOne(ingredient);
             // this._context.Ingredients.Add(ingredient);
             // FIXME: Bug on saving new ingredient..
             // var result = this._context.SaveChanges();
-            if (createdEntityId == 0)
+            if (!response.Success)
             {
-                return UnprocessableEntity(input);
+                return UnprocessableEntity(response);
             }
-            return Ok($"Object added. ID:{createdEntityId}");
+            //return Ok($"Object added. ID:{createdEntityId}");
+            return Ok(response);
         }
 
         /// <summary>
