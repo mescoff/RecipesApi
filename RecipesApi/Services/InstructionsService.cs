@@ -12,6 +12,18 @@ namespace RecipesApi.Services
         {
         }
 
+        public override IEnumerable<Instruction> GetAll()
+        {
+            var result = this.Entities.Include(i => i.Media);
+            return result;
+        }
+
+        public async override Task<Instruction> GetOne(int id)
+        {
+            var result = await this.Entities.Include(i => i.Media).SingleOrDefaultAsync(r => r.Id == id);
+            return result;
+        }
+
         protected override void prepareInputForCreateOrUpdate(Instruction input, bool isCreation)
         {
             if (isCreation)
