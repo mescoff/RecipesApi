@@ -111,12 +111,13 @@ namespace RecipesApi.Controllers
         {
             try
             {
-                var createdEntityId = await this._instructionsService.AddOne(input);
-                if (createdEntityId == 0)
+                var response = await this._instructionsService.AddOne(input);
+                if (!response.Success)
                 {
-                    return UnprocessableEntity(input);
+                    return UnprocessableEntity(response);
                 }
-                return Ok($"Object added. ID:{createdEntityId}");
+                //return Ok($"Object added. ID:{createdEntityId}");
+                return Ok(response);
             }
             catch (Exception e)
             {

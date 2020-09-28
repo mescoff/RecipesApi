@@ -25,8 +25,11 @@ namespace RecipesApi
             modelBuilder.Entity<Recipe>();
                 ;
             modelBuilder.Entity<Category>() ;
+            modelBuilder.Entity<RecipeCategory>();
+                //.HasKey(rc => new { rc.Category_Id, rc.Recipe_Id });
             //modelBuilder.Entity<RecipeCategory>();
             modelBuilder.Entity<Unit>();
+            modelBuilder.Entity<Media>();
             //modelBuilder.Entity<Instruction>();
             modelBuilder.Entity<Ingredient>();
             //modelBuilder.Entity<Ingredient>(entity =>

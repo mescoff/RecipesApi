@@ -54,6 +54,12 @@ namespace RecipesApi.Controllers
             return Ok(categories);
         }
 
+        // TODO:   Route: /recipes
+        //public Task<ActionResult> GetRecipes()
+        //{
+        //    var categories = this._categoriesService
+        //}
+
         /// <summary>
         /// Get 1 category by id
         /// </summary>
@@ -110,13 +116,15 @@ namespace RecipesApi.Controllers
         {
             try
             {
-                var createdEntityId = await this._categoriesService.AddOne(input);
-                if (createdEntityId == 0)
+                var response = await this._categoriesService.AddOne(input);
+                if (!response.Success)
                 {
-                    return UnprocessableEntity(input);
+                    return UnprocessableEntity(response);
                 }
-                return Ok($"Object added. ID:{createdEntityId}");
+                //return Ok($"Object added. ID:{createdEntityId}");
+                return Ok(response);
             }
+            // TODO: below is now obsolete since exception is caught in service. Cleanup
             catch (Exception e)
             {
                 // Category has a constraint in DB on having unique name

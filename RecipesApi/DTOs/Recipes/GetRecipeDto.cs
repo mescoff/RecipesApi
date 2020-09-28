@@ -6,6 +6,7 @@ namespace RecipesApi.DTOs.Recipes
 {
     public class GetRecipeDto
     {
+        public int Id { get; set; }
         public string TitleShort { get; set; }
         public string TitleLong { get; set; }
         public string Description { get; set; }
@@ -16,6 +17,6 @@ namespace RecipesApi.DTOs.Recipes
         public IEnumerable<Ingredient> Ingredients { get; set; }
         public IEnumerable<Media> Media { get; set; }
         public IEnumerable<Instruction> Instructions { get; set; }
-        public IEnumerable<GetCategoryDto> Categories { get; set; }
+        public IEnumerable<Category> Categories { get; set; }
     }
 }

@@ -94,15 +94,16 @@ namespace RecipesApi.Controllers
         {
             //TODO: add standard on naming
             var media = this._mapper.Map<MediaDto, Media>(input);
-            var createdEntityId = await this._mediaService.AddOne(media);
+            var response = await this._mediaService.AddOne(media);
             // this._context.medias.Add(media);
             // FIXME: Bug on saving new media..
             // var result = this._context.SaveChanges();
-            if (createdEntityId == 0)
+            if (!response.Success)
             {
-                return UnprocessableEntity(input);
+                return UnprocessableEntity(response);
             }
-            return Ok($"Object added. ID:{createdEntityId}");
+            //return Ok($"Object added. ID:{createdEntityId}");
+            return Ok(response);
         }
 
         /// <summary>
