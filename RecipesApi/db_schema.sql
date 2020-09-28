@@ -42,9 +42,10 @@ CREATE TABLE recipe_media(
     MediaPath varchar(200) NOT NULL,
     Title varchar(200) NOT NULL,
     Tag varchar(50),
-    Recipe_Id INT,
+    Recipe_Id INT NOT NULL,
+    RecipeInst_Id INT,
     PRIMARY KEY (RecipeMedia_Id),
-    FOREIGN KEY (Recipe_Id) REFERENCES recipes(Recipe_Id) ON DELETE CASCADE
+    FOREIGN KEY (Recipe_Id) REFERENCES recipes(Recipe_Id) ON DELETE CASCADE,
 );
 
 CREATE TABLE recipe_categories(
@@ -60,7 +61,29 @@ CREATE TABLE recipe_instructions(
 	RecipeInst_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
     StepNum INT NOT NULL,
     Description varchar(500) NOT NULL,
-    Recipe_Id INT,
+    Recipe_Id INT NOT NULL,
+    RecipeMedia_Id INT,
     PRIMARY KEY (RecipeInst_Id),
-    FOREIGN KEY (Recipe_Id) REFERENCES Recipes(Recipe_Id) ON DELETE CASCADE
+    FOREIGN KEY (Recipe_Id) REFERENCES Recipes(Recipe_Id) ON DELETE CASCADE,
+    FOREIGN KEY (RecipeMedia_Id) REFERENCES recipe_media(RecipeMedia_Id)
 );
+
+CREATE TABLE recipe_timeintervals(
+    TimeInterval_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
+    IntervalLabel_Id INT NOT NULL,
+    FOREIGN KEY (IntervalLabel_Id) REFERENCES timeinterval_labels(IntervalLabel_Id)
+)
+
+CREATE TABLE timeinterval_labels(
+    IntervalLabel_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
+    Label varchar(100) UNIQUE
+)
+
+CREATE TABLE recipe_timeintervalspans(
+    IntervalSpan_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
+    TimeValue INT NOT NULL, 
+    TimeUnit enum('Hours','Minutes','Seconds'),
+    TimeInterval_Id INT NOT NULL,
+    FOREIGN KEY (TimeInterval_Id) REFERENCES recipe_timeintervals(TimeInterval_Id),
+    UNIQUE(TimeValue,TimeUnit,TimeInterval_Id)
+    )

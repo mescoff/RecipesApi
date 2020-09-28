@@ -58,6 +58,7 @@ namespace RecipesApi
             services.AddScoped<IEntityService<Unit>,UnitsService>();
             services.AddScoped<IEntityService<Media>,MediaService>();
             services.AddScoped<IEntityService<Instruction>,InstructionsService>();
+            services.AddScoped<IEntityService<TimeInterval>,TimeIntervalsService>();
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {

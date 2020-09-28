@@ -27,6 +27,12 @@ namespace RecipesApi.Models
         [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
         public Recipe Recipe { get; set; }
 
+        [JsonIgnore]
+        public int? RecipeMedia_Id { get; set; }
+
+        [ForeignKey("RecipeMedia_Id")]
+        public Media Media { get; set; }
+
         public override string ToString()
         {
             return JsonSerializer.Serialize(this);

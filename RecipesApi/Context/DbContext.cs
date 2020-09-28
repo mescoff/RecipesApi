@@ -16,6 +16,7 @@ namespace RecipesApi
         public DbSet<Unit> Units { get; set; }
         public DbSet<Instruction> Instructions { get; set; }
         public DbSet<Ingredient> Ingredients { get; set; }
+        public DbSet<TimeInterval> TimeIntervals { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +33,7 @@ namespace RecipesApi
             modelBuilder.Entity<Media>();
             //modelBuilder.Entity<Instruction>();
             modelBuilder.Entity<Ingredient>();
+            modelBuilder.Entity<TimeInterval>();
             //modelBuilder.Entity<Ingredient>(entity =>
             //{
             //    entity.HasKey(e => e.RecipeIng_Id);

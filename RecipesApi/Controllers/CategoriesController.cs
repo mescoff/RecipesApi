@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RecipesApi.Models;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -45,8 +44,8 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult GetAll()
         {
-            var categories = this._categoriesService.GetAll().ToList();
-            if (categories.Count == 0)
+            var categories = this._categoriesService.GetAll();
+            if (categories.Count() == 0)
             {
                 return NoContent();
             }
