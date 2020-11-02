@@ -43,6 +43,7 @@ namespace RecipesApi.Models
         public IEnumerable<Media> Media { get; set; }
         public IEnumerable<Instruction> Instructions { get; set; }
         public IEnumerable<RecipeCategory> RecipeCategories { get; set; }
+        //public IEnumerable<TimeInterval> TimeIntervals { get; set; }
         public override string ToString()
         {
             return JsonSerializer.Serialize(this);
