@@ -15,7 +15,7 @@ namespace RecipesApi.DTOs.Recipes
         public DateTime? AuditDate { get; set; }
         public DateTime? CreationDate { get; set; }
         public IEnumerable<Ingredient> Ingredients { get; set; }
-        public IEnumerable<Media> Media { get; set; }
+        public IEnumerable<MediaDto> Media { get; set; }
         public IEnumerable<Instruction> Instructions { get; set; }
         public IEnumerable<Category> Categories { get; set; }
     }

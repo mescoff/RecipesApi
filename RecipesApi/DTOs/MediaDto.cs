@@ -9,7 +9,7 @@ namespace RecipesApi.DTOs
         public int Id { get; set; }
 
         [DataMember]
-        public string MediaPath { get; set; }
+        public byte[] MediaBytes { get; set; }
 
         [DataMember]
         public string Title { get; set; }
