@@ -15,7 +15,7 @@ namespace RecipesApi.Models
 
         [Required]
         [MaxLength(200)]
-        public string MediaPath { get; set; }
+        public string MediaPath { get; set; } 
 
         [Required]
         [MaxLength(200)]
