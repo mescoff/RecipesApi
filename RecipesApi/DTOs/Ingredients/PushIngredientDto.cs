@@ -1,23 +1,24 @@
-﻿using RecipesApi.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Runtime.Serialization;
+using System.Threading.Tasks;
 
-namespace RecipesApi.DTOs
+namespace RecipesApi.DTOs.Ingredients
 {
-    [DataContract]
-    public class IngredientDto
-    {
-        [DataMember]
-        public int Id { get; set; }
-        [DataMember]
-        public string Name { get; set; }
-        [DataMember]
-        public double Quantity { get; set; }
-        [DataMember]
-        public int Recipe_Id { get; set; }
-        [DataMember]
-        public int Unit_Id { get; set; } // TODO: Maybe keep Unit_ID ? So that as input, Unit is empty but Unit Id is provided, and as Output, we give both
-        [DataMember]
-        public Unit Unit { get; set; }
 
+    public class PushIngredientDto
+    {
+        [Required]
+        public int Id { get; set; }
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        public double Quantity { get; set; }
+        [Required]
+        public int Recipe_Id { get; set; }
+        [Required]
+        public int Unit_Id { get; set; } // TODO: Maybe keep Unit_ID ? So that as input, Unit is empty but Unit Id is provided, and as Output, we give both
     }
 }

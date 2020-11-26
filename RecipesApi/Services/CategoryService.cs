@@ -22,9 +22,9 @@ namespace RecipesApi.Services
         {
             // Make sure first letter is upper case
             //var name = Functions.FirstChatToUpper(input.Name.ToCharArray();
-            var name = Functions.FirstCharToUpper(input.Name);
+            var name = Utils.Utils.FirstCharToUpper(input.Name);
             //name[0] = char.ToUpper(name[0]);
-            var description = Functions.FirstCharToUpper(input.Description);
+            var description = Utils.Utils.FirstCharToUpper(input.Description);
             input.Name = name;
             input.Description = description;
 

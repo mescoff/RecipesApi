@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using RecipesApi.DTOs;
 using System.Linq;
 using RecipesApi.Models;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using RecipesApi.DTOs.Recipes;
-using System.Collections;
 using System.Collections.Generic;
+using RecipesApi.Validate;
 
 namespace RecipesApi.Controllers
 {
@@ -16,6 +15,7 @@ namespace RecipesApi.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    //[ValidateModel]
     public class RecipesController : ControllerBase
     {
         private readonly IEntityService<Recipe> _recipesService;
@@ -103,6 +103,7 @@ namespace RecipesApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        //[ValidateAntiForgeryToken]
         public async Task<ActionResult> Post([FromBody] Recipe input)
         {
             //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
@@ -128,10 +129,18 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
       
-        public async Task<ActionResult> Put([FromBody] Recipe input)
+        public async Task<ActionResult> Put([FromBody] PushRecipeDto input)
         {
-            //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
-            var isSuccess = await this._recipesService.UpdateOne(input);
+         
+
+            var recipe = this._mapper.Map<PushRecipeDto, Recipe>(input);
+            // validate model after transformed into Recipe
+            if (!TryValidateModel(recipe, nameof(Recipe)))
+            {
+                var state = ModelState;
+                return new BadRequestObjectResult(ModelState);           
+            }
+            var isSuccess = await this._recipesService.UpdateOne(recipe);
             if (!isSuccess)
             {
                 return UnprocessableEntity(input);
