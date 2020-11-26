@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
+    [Table("categories")]
     public class Category : ICustomModel
     {
         [Key]

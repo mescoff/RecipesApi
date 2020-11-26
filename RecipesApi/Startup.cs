@@ -55,8 +55,8 @@ namespace RecipesApi
                     .UseLoggerFactory(ConsoleLoggerFactory)
                     .EnableSensitiveDataLogging(true)
                     .UseMySql(
-                    Configuration.GetConnectionString("DefaultConnection"), 
-                    mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
+                    Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 18)))
+                //mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
                 );
             services.AddScoped<IEntityService<Recipe>,RecipesService>();
             services.AddScoped<IEntityService<Category>,CategoryService>();
