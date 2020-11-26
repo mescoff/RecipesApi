@@ -119,7 +119,14 @@ namespace RecipesApi.Services
                 //var result = this.Context.SaveChanges();
 
                 // TODO: CHECK that removing the prepareInputForCreateOrUpdate doesn't break everything for Recipe Service...
+           
 
+
+                // Find it (by id), go through every nested prop and set the ones that were modified or add new ones.
+                // SaveChanges
+                // TODO: forgot to Attach... + modify state... OR just call Update(input). See disconnected update in https://code-maze.com/efcore-modifying-data/
+                // BUUUUT, with both methods above the whole object will be set as modified even though only a few prop might have been updated.... Better to go the longer way but more precise
+                // where we look for object in Entities, By Id and then one by one update what needs to be updated from object received
 
                 // Here we'd do (instead of everything above
                 this.Context.Entry(input).State = EntityState.Modified;
