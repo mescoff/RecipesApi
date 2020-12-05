@@ -8,16 +8,20 @@ namespace RecipesApi.Tests
 {
     public static class TestUtils
     {
-        public static async Task<DbContext> GetRecipesContext()
+
+        // TODO: Nope. This should be a class with IDisposable. See 4:02 of Chapter 9 - refactoring.
+        // SO that it can be called temporarily for a test
+        public static async Task<RecipesContext> GetRecipesContext()
         {
-            var options = new DbContextOptionsBuilder<DbContext>()
+            var options = new DbContextOptionsBuilder<RecipesContext>()
                   .UseInMemoryDatabase("TestContext")
                   .EnableSensitiveDataLogging()
                   .Options;
-            var recipeContext = new DbContext(options);
+            var recipeContext = new RecipesContext(options);
             recipeContext.Database.EnsureCreated();
             if (await recipeContext.Recipes.CountAsync() <= 0)
             {
+                // todo: use AddRange()
                 for (int i = 1; i <= 5; i++)
                 {
                     recipeContext.Recipes.Add(new Recipe()

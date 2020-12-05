@@ -9,6 +9,12 @@ namespace RecipesApi.Models
     [Table("categories")]
     public class Category : ICustomModel
     {
+
+        public Category()
+        {
+            this.RecipeCategories = new List<RecipeCategory>();
+        }
+
         [Key]
         [Column("Category_Id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

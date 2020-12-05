@@ -8,7 +8,7 @@ using System;
 namespace RecipesApi.Models
 {
     [Table("recipe_ingredients")]
-    public class Ingredient: ICustomModel, IEquatable<Ingredient>
+    public class Ingredient: ICustomModel, IEquatable<Ingredient>  // TODO: Move IEquatable to ICustomModel
     {
         [Key]
         [Column("RecipeIng_Id")]

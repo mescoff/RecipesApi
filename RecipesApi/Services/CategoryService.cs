@@ -6,7 +6,7 @@ namespace RecipesApi.Services
 {
     public class CategoryService : EntityService<Category>
     {
-        public CategoryService(DbContext context, ILogger<CategoryService> logger) : base(context, logger)
+        public CategoryService(RecipesContext context, ILogger<CategoryService> logger) : base(context, logger)
         {
         }
 

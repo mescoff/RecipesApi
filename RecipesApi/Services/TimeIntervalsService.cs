@@ -7,7 +7,7 @@ namespace RecipesApi.Services
 {
     public class TimeIntervalsService : EntityService<TimeInterval>
     {
-        public TimeIntervalsService(DbContext context, ILogger<TimeIntervalsService> logger) : base(context, logger)
+        public TimeIntervalsService(RecipesContext context, ILogger<TimeIntervalsService> logger) : base(context, logger)
         {
         }
 

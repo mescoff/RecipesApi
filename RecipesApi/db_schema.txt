@@ -1,5 +1,7 @@
-USE recipesdb
-CREATE TABLE Recipes(
+CREATE DATABASE recipesdb;
+
+USE recipesdb;
+CREATE TABLE recipes(
 	Recipe_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
     TitleShort varchar(50) NOT NULL ,
     TitleLong varchar(150),

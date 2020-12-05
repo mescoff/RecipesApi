@@ -5,7 +5,7 @@ namespace RecipesApi.Services
 {
     public class MediaService : EntityService<Media>
     {
-        public MediaService(DbContext context, ILogger<MediaService> logger) : base(context, logger)
+        public MediaService(RecipesContext context, ILogger<MediaService> logger) : base(context, logger)
         {
         }
 
