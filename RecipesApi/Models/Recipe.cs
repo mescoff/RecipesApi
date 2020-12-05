@@ -11,6 +11,15 @@ namespace RecipesApi.Models
 
     public class Recipe: ICustomModel
     {
+
+        public Recipe()
+        {
+            this.Ingredients = new List<Ingredient>();
+            this.Media = new List<Media>();
+            this.Instructions = new List<Instruction>();
+            this.RecipeCategories = new List<RecipeCategory>();
+        }
+
         [Key]
         [Column("Recipe_Id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)] // TODO: does not work if value is provided as expected. But see prettier way of just making id 0 on creation...
@@ -40,10 +49,10 @@ namespace RecipesApi.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime? CreationDate { get; set; }
 
-        public IEnumerable<Ingredient> Ingredients { get; set; }
-        public IEnumerable<Media> Media { get; set; }
-        public IEnumerable<Instruction> Instructions { get; set; }
-        public IEnumerable<RecipeCategory> RecipeCategories { get; set; }
+        public IList<Ingredient> Ingredients { get; set; }
+        public IList<Media> Media { get; set; }
+        public IList<Instruction> Instructions { get; set; }
+        public IList<RecipeCategory> RecipeCategories { get; set; }
         //public IEnumerable<TimeInterval> TimeIntervals { get; set; }
         public override string ToString()
         {

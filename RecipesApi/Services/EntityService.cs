@@ -18,7 +18,7 @@ namespace RecipesApi.Services
     public abstract class EntityService<T> : IEntityService<T> where T: class, ICustomModel
     {
 
-        protected readonly DbContext Context;
+        protected readonly RecipesContext Context;
         protected readonly DbSet<T> Entities;
         protected readonly ILogger _logger;
 
@@ -27,7 +27,7 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="context">The DB context</param>
         /// <param name="logger">The logger</param>
-        public EntityService(DbContext context, ILogger<EntityService<T>> logger)
+        public EntityService(RecipesContext context, ILogger<EntityService<T>> logger)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.Entities = this.Context.Set<T>() ?? throw new ArgumentNullException(nameof(context));
@@ -84,7 +84,7 @@ namespace RecipesApi.Services
                 // TODO: return created object in future
                 if (result > 0)
                 {
-                    input.Id = result;
+                    input.Id = input.Id;
                     response.Success = true;
                     response.Message = "Object created";
                     response.Content = input;
@@ -168,7 +168,7 @@ namespace RecipesApi.Services
         /// <param name="input">The input</param>
         /// <param name="isCreation">Is it a creation or update</param>
         /// <returns></returns>
-        protected abstract void prepareInputForCreateOrUpdate(T input, bool isCreation);
+        protected abstract void prepareInputForCreateOrUpdate(T input, bool isCreation); // TODO: rename to ValidateInput
 
         public void Dispose()
         {

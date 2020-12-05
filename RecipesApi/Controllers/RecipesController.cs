@@ -134,7 +134,7 @@ namespace RecipesApi.Controllers
          
 
             var recipe = this._mapper.Map<PushRecipeDto, Recipe>(input);
-            // validate model after transformed into Recipe
+            // validate model after transformed into Recipe and send specific response
             if (!TryValidateModel(recipe, nameof(Recipe)))
             {
                 var state = ModelState;

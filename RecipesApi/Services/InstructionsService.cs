@@ -8,7 +8,7 @@ namespace RecipesApi.Services
 {
     public class InstructionsService: EntityService<Instruction>
     {
-        public InstructionsService(DbContext context, ILogger<InstructionsService> logger) : base(context, logger)
+        public InstructionsService(RecipesContext context, ILogger<InstructionsService> logger) : base(context, logger)
         {
         }
 

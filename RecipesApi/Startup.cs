@@ -49,11 +49,11 @@ namespace RecipesApi
             // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
             // Using Pomelo instead which support NetCore 3+
             // Lazy loading DBSets only when needed
-            services.AddDbContext<DbContext>(options =>
+            services.AddDbContext<RecipesContext>(options =>
                 //.UseLazyLoadingProxies()
                 options
-                    .UseLoggerFactory(ConsoleLoggerFactory)
-                    .EnableSensitiveDataLogging(true)
+                    //.UseLoggerFactory(ConsoleLoggerFactory)
+                    .EnableSensitiveDataLogging()
                     .UseMySql(
                     Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 18)))
                 //mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))

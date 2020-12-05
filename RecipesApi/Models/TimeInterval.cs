@@ -8,6 +8,10 @@ namespace RecipesApi.Models
     [Table("recipe_timeintervals")]
     public class TimeInterval : ICustomModel
     {
+        public TimeInterval()
+        {
+            this.TimeSpans = new List<TimeIntervalSpan>();
+        }
 
         [Key]
         [Column("TimeInterval_Id")]
@@ -21,7 +25,7 @@ namespace RecipesApi.Models
         [ForeignKey("IntervalLabel_Id")]
         public TimeIntervalLabel Label { get; set; }
 
-        public IEnumerable<TimeIntervalSpan> TimeSpans {get; set;}
+        public IEnumerable<TimeIntervalSpan> TimeSpans { get; set; }
 
     }
 }

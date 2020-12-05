@@ -18,7 +18,7 @@ namespace RecipesApi
     public class RecipesService : EntityService<Recipe>  //IEntityService<RecipeBase>
     {
       
-        public RecipesService(DbContext context, ILogger<RecipesService> logger) : base(context, logger)
+        public RecipesService(RecipesContext context, ILogger<RecipesService> logger) : base(context, logger)
         {
         }
 
@@ -36,21 +36,60 @@ namespace RecipesApi
 
         public async override Task<bool> UpdateOne(Recipe recipe)
         {
-            var dbRecipe = await this.GetOne(recipe.Id);
+            //var dbRecipe = await this.GetOne(recipe.Id);
+            // FOR NOW just media and Ingredients. AS NOT TRACKING to avoid issues on removal
+            // TODO: AsNoTracking is no longer needed. We changed default behavior to NoTracking in RecipeContext
+            var dbRecipe = this.Entities.Include(r => r.Media).Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == recipe.Id); // TODO: make async
+
+            //var dbRecipe = this.Entities.AsNoTracking().FirstOrDefault(r => r.Id == recipe.Id);
+            //var dbRecipe = this.Entities.FirstOrDefault(r => r.Id == recipe.Id);
             var result = 0;
             if (dbRecipe != null)
             {
-                HandleIngredientsUpdates(recipe, dbRecipe);
+                // Recipe exists so we can update
+
+                //HandleIngredientsUpdates(recipe, dbRecipe);
+
+                //Disconnected scenario. Below not needed we'll already have a new context ?
+                //using ( var newContext = new RecipesContext()){
+                //    // This is not performant as it will act like recipe itself has been modified even if it hasn't. Use Attach instead
+                //    // newContext.Set<Recipe>.Update(recipe);
+                //    newContext.Set<Recipe>.Attach(recipe);
+                //    newContext.SaveChanges();
+                //}
+
+                // UPDATE:
+                // - new children are noticed on Attach
+                // - BUT updates to object or children are not registered with just Attach...
+                // - i will STILL have to delete manually children that were deleted (compare)
+                // ==> FIND a generic way to easily run through every prop of each object and keep track of prop that aren't the same. Then set state to Modified for each of those
+
+                // LAST UPDATE:
+                // - Update works. But all children are updated even if no updates happened. For now it's okay but
+                // later on we'll have to notice specific changes and only update these
+                // - KO: audit date doesn't update on DB side
+                // - Missing children aren't considered as Delete. FOR NOW THIS SHOULD BE DEFAULT BEHAVIOR. So we will manually compare
+                // and remove children
+
                 try
                 {
-                    this.Context.Entry(dbRecipe).State = EntityState.Modified;
+                    //this.Entities.Attach(recipe);
+                    //// Handle deletions
+                    //HandleDeletedChildren(recipe, dbRecipe);
+
+                    //// Handle all over updates
+                    //this.Entities.Update(recipe);
+
+                    HandleIngredientUpdates(recipe, dbRecipe);
+
+                    //  this.Context.Entry(dbRecipe).State = EntityState.Modified;
                     //dbRecipe = input ;
-                    var entries = this.Context.ChangeTracker.Entries();
+                    var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
                     result = this.Context.SaveChanges();
                 }
                 catch (Exception e)
                 {
-                    this.Context.Entry(dbRecipe).State = EntityState.Unchanged;
+                    //this.Context.Entry(dbRecipe).State = EntityState.Unchanged;
                     var errorMessage = $"Error while updating entity. Rolling back changes: Entity={JsonConvert.SerializeObject(dbRecipe)} ErrorMessage ={e.InnerException?.Message}";
                     _logger.LogError(errorMessage);
                     return false;
@@ -69,10 +108,11 @@ namespace RecipesApi
         protected override void prepareInputForCreateOrUpdate(Recipe input, bool isCreation)
         {
        
+            // TODO: separate these back into post/put override
             if (isCreation)
             {
                 //// CREATION
-                // Clearing some properties for DB insert
+                // Make sure Id is 0 -- DB generates it
                 input.Id = 0;
              
                 if (input.Ingredients != null)
@@ -82,8 +122,8 @@ namespace RecipesApi
                         // clear Unid, recipeId and Id to be safe
                         ingredient.Id = 0;
                         ingredient.Recipe_Id = 0;
-                        ingredient.Unit = null;
-                        // TODO: Shouldn't Recipe also be cleared?
+                        ingredient.Unit = null;  // TODO: Unit should also not be part of it ?
+                        // TODO: there should be no Ingredient.Recipe
                     }
                 }
                 if (input.Media != null)
@@ -96,6 +136,8 @@ namespace RecipesApi
                     }
                 }
 
+                // TODO: keep reseting other nested data here
+
             }
             else
             {
@@ -103,6 +145,7 @@ namespace RecipesApi
                 this._logger.LogInformation($"Updating Recipe w/ ID: {input.Id}");
                 //input.AuditDate = DateTime.Now;
                 // getting read only value of this recipe (thus the no tracking)
+                // TODO: AsNoTracking is no longer needed. We changed default behavior to NoTracking in RecipeContext
                 var dbRecipe = this.Entities.Include(r=> r.Media).Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == input.Id); // TODO: make async
 
                 ///// INGREDIENTS
@@ -152,7 +195,8 @@ namespace RecipesApi
         }
 
 
-        private void HandleIngredientsUpdates(Recipe input, Recipe dbRecipe)
+        // TODO: We should follow a disconnected model behavior !!! Get data as no tracking and then update it in new context
+        private void HandleIngredientsUpdatesDeprecated(Recipe input, Recipe dbRecipe)
         {
             // Look for Deleted. Look for added. Look for duplicates
 
@@ -176,6 +220,7 @@ namespace RecipesApi
             // Check for removed ingredients and delete them
             var dbRecipeIngredientsId = new HashSet<int>(dbRecipeIngredients.Select(i => i.Id));
             var ingMissingInUpdatedRecipe = dbRecipeIngredientsId.Where(i => !inputIngredientsId.Contains(i)); // list of ingredients IDs missing from updated Recipe and need to remove
+            // TODO: Use remove range here instead... Find all ing not dbRecipe.ing and remove that list
             foreach (var id in ingMissingInUpdatedRecipe)
             {
                 var dbIng = this.Context.Set<Ingredient>().Find(id); // there should not be any doubt that it's there
@@ -194,7 +239,7 @@ namespace RecipesApi
             {
                 if (ing.Id == 0)
                 {
-                    // TODO: verify that it has recipe ID ? (technically it's required at model level so should be OK) But override just in case?
+                    // Overriding foreign key for peace of mind
                     ing.Recipe_Id = input.Id;
                     // Add ingredient
                     //this.Context.Set<Ingredient>().Add(ing);
@@ -226,6 +271,94 @@ namespace RecipesApi
 
         
             return;
+        }
+
+
+        private void HandleIngredientUpdates(Recipe input, Recipe dbRecipe)
+        {
+            var existingRecipeIngIds = dbRecipe.Ingredients.Select(i => i.Id);  // ingredients from DB recipe
+            var updatedRecipeIngIds = input.Ingredients.Select(i => i.Id);      // ingredients from update received
+            // retrieve ingredients in 0(1)
+            var updatedRecipeIngOrganized = input.Ingredients.ToDictionary(i => i.Id, i => i);
+            var existingRecipeIngOrganized = dbRecipe.Ingredients.ToDictionary(i => i.Id, i => i);
+
+            // ADD ALL ingredients if DB recipe doesn't have any yet
+            if (!existingRecipeIngIds.Any())
+            {
+                Context.AddRange(input.Ingredients);
+            }
+            else 
+            {
+                
+                var ingredientsIdsToDelete = existingRecipeIngIds.Except(updatedRecipeIngIds); // get ing Ids in existing recipe missing from updated recipe
+                var ingredientsIdsToAdd = updatedRecipeIngIds.Except(existingRecipeIngIds); // get ing Ids in updated recipe missing from existing recipe
+
+                // DELETE
+                //if (existingRecipeIngIds.Count() > updatedRecipeIngIds.Count())
+                if (ingredientsIdsToDelete.Count() > 0)
+                {
+                    // if update contains less ingredients than in existing recipe. We find them and remove them.                 
+                    var ingredientsToDelete = existingRecipeIngOrganized.Where(kp => ingredientsIdsToDelete.Contains(kp.Key)).Select(kp => kp.Value);
+                    this.Context.Set<Ingredient>().RemoveRange(ingredientsToDelete);
+                }
+                // ADD
+                if (ingredientsIdsToAdd.Count()> 0)
+                //else if (existingRecipeIngIds.Count() < updatedRecipeIngIds.Count())
+                {
+
+                    var ingredientsToAdd = updatedRecipeIngOrganized.Where(kp => ingredientsIdsToAdd.Contains(kp.Key)).Select(kp => kp.Value);
+                    this.Context.Set<Ingredient>().AddRange(ingredientsToAdd);
+                }
+
+                // UPDATE
+                // get ingredients IDs that are common to DB recipe and update.
+                var ingredientsIdsInCommon = existingRecipeIngIds.Intersect(updatedRecipeIngIds);
+                // and retrieve actual ingredients from existing ingredients
+                var ingredientsInCommon = existingRecipeIngOrganized.Where(kp => ingredientsIdsInCommon.Contains(kp.Key)).Select(kp => kp.Value); // TODO: is this unefficient? We use it in multiple places when we could also do recipe.Ingredients.Where( x.Contains(x.id))
+
+                // Run through ingredients on updated recipe and DB recipe, If they contain the same info skip. Otherwise update
+                foreach (var existingIng in ingredientsInCommon)
+                {
+                    Ingredient receivedIng;
+                    updatedRecipeIngOrganized.TryGetValue(existingIng.Id, out receivedIng);
+                    if (receivedIng != null && !existingIng.Equals(receivedIng))
+                    {
+                        // TODO: GOOD TO KNOW: here we can use a DTO that's not translated if needed in update, as long as updated object has same properties as existing
+                        //this.Context.Entry(existingIng).CurrentValues.SetValues(receivedIng);  // TODO: BUG values are not set to modified 
+                        // var x = this.Context.Entry(existingIng).State;
+                        //var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
+
+                        // making sure entity is detached (if only an ing update is ran it won't be attached, but if other ingredients were added/deleted before, this ingredient will be tracked)
+                        var entryState = this.Context.Entry(input).State;
+                        this.Context.Entry(input).State = EntityState.Detached;
+                        this.Context.Ingredients.Update(receivedIng);
+
+                        // TODO: Issue here is that when we only update ing, Update works without issue because it isn't tracked
+                        // TODO: BUT if we performed other actions before (add/delete) then the whole recipe and ingredients are tracked and all we'd have to do is this.Context.Entry(existingIng).CurrentValues.SetValues(receivedIng) but we need to know if it's attached and right now i don't know how 
+                    }
+                }     
+            }
+        }
+
+        private void HandleDeletedChildren(Recipe input, Recipe dbRecipe)
+        {
+            // TODO: Make sure that cascade delete is respected on DB side
+            ////// INGREDIENTS
+            //var dbRecipeIngredients = new HashSet<int>(dbRecipe.Ingredients.Select(i => i.Id));
+            var updatedRecipeIng = input.Ingredients.Select(i => i.Id);
+            // TODO: only do it if not same length of ingrdients?
+            var ingMissingInUpdatedRecipe = dbRecipe.Ingredients.Where(i => !updatedRecipeIng.Contains(i.Id));
+            //var ingMissingInUpdatedRecipeOLD = dbRecipeIngredients.Where(i => !input.Ingredients.Select( ing => ing.Id).Contains(i)).ToArray(); // list of ingredients IDs missing from updated Recipe and need to remove
+            this.Context.Set<Ingredient>().RemoveRange(ingMissingInUpdatedRecipe);
+            //this.Context.SaveChanges();
+            //foreach (var id in ingMissingInUpdatedRecipe)
+            //{
+            //    var dbIng = this.Context.Set<Ingredient>().Find(id); // there should not be any doubt that it's there
+            //    this.Context.Set<Ingredient>().Remove(dbIng);
+            //    this._logger.LogInformation($"Deleting Ingredient with Id:{dbIng.Id} and Name:{dbIng.Name} on Recipe ID: {input.Id}");
+            //}
+
+            // Media
         }
     }
 }

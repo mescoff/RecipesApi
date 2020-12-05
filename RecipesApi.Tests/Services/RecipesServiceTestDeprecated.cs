@@ -12,10 +12,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RecipesApi.Tests.Controller
+namespace RecipesApi.Tests.Services
 {
     [TestFixture]
-    public class RecipesServiceTest
+    public class RecipesServiceTestDeprecated
     {
         private Mock<IEntityService<Recipe>> _recipeServicesMock;
         private Mock<ILogger<RecipesService>> _logger;
@@ -60,10 +60,10 @@ namespace RecipesApi.Tests.Controller
         [Test]
         public void Test_PostOneRecipeWorks()
         {
-            var options = new DbContextOptionsBuilder<DbContext>()
+            var options = new DbContextOptionsBuilder<RecipesContext>()
                   .UseInMemoryDatabase("AddOneRecipe")
                   .Options;
-            using (var recipeContext = new DbContext(options))
+            using (var recipeContext = new RecipesContext(options))
             {
                 var recipeService = setupService(recipeContext);
                 var creationDate = new DateTime(2019, 12, 03);
@@ -82,7 +82,7 @@ namespace RecipesApi.Tests.Controller
                 });
             }
             // Use a separate instance of the context to verify correct data was saved to database
-            using (var recipeContext = new DbContext(options))
+            using (var recipeContext = new RecipesContext(options))
             {
                 Assert.AreEqual(1, recipeContext.Recipes.Count());
                 Assert.AreEqual("LongTitle", recipeContext.Recipes.Single().TitleLong);
@@ -176,12 +176,12 @@ namespace RecipesApi.Tests.Controller
         [Test]
         public void Test_PostWithRecipeUpdateAndIngredientsUpdateAndDeleteWorks()
         {
-            var options = new DbContextOptionsBuilder<DbContext>()
+            var options = new DbContextOptionsBuilder<RecipesContext>()
                   .UseInMemoryDatabase("PostRecipe") //.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
                   .EnableSensitiveDataLogging()
                   .Options;
 
-            using (var recipeContext = new DbContext(options))
+            using (var recipeContext = new RecipesContext(options))
             {
 
                 // TODO: MOCK ALL BELOW. 
@@ -199,7 +199,7 @@ namespace RecipesApi.Tests.Controller
                 recipeContext.SaveChanges();
 
             }
-            using (var recipeContext = new DbContext(options))
+            using (var recipeContext = new RecipesContext(options))
             {
                 var recipeService = setupService(recipeContext);
                 var recipes = recipeContext.Set<Recipe>().ToList();
@@ -224,7 +224,7 @@ namespace RecipesApi.Tests.Controller
         }
         
 
-            private IEntityService<Recipe> setupService(DbContext dbContext)
+            private IEntityService<Recipe> setupService(RecipesContext dbContext)
         {
             return new RecipesService(dbContext, this._logger.Object);
         }

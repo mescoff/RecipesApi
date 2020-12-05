@@ -13,7 +13,7 @@ namespace RecipesApi.Services
         /// </summary>
         /// <param name="context">The database context</param>
         /// <param name="logger">The logger</param>
-        public UnitsService(DbContext context, ILogger<UnitsService> logger) : base(context, logger)
+        public UnitsService(RecipesContext context, ILogger<UnitsService> logger) : base(context, logger)
         {
         }
 
