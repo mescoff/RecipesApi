@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 namespace RecipesApi.Tests.Services
 {
     [TestFixture]
+    [Ignore("Deprecated")]
     public class RecipesServiceTestDeprecated
     {
         private Mock<IEntityService<Recipe>> _recipeServicesMock;

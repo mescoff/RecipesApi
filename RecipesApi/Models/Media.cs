@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("recipe_media")]
-    public class Media: ICustomModel
+    public class Media : ICustomModel<Media>
     {
         [Key]
         [Column("RecipeMedia_Id")]
@@ -15,7 +15,7 @@ namespace RecipesApi.Models
 
         [Required]
         [MaxLength(200)]
-        public string MediaPath { get; set; } 
+        public string MediaPath { get; set; }
 
         [Required]
         [MaxLength(200)]
@@ -30,6 +30,17 @@ namespace RecipesApi.Models
 
         [Required]
         public int Recipe_Id { get; set; }
+
+        public bool Equals(Media obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.MediaPath == obj.MediaPath &&
+                this.Title == obj.Title &&
+                this.Tag == obj.Tag &&
+                this.Recipe_Id == obj.Recipe_Id
+                );
+        }
 
         public override string ToString()
         {
