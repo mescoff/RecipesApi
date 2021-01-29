@@ -9,7 +9,7 @@ namespace RecipesApi.Models
 {
     [Table("recipes")]
 
-    public class Recipe: ICustomModel
+    public class Recipe : ICustomModel<Recipe>
     {
 
         public Recipe()
@@ -54,6 +54,21 @@ namespace RecipesApi.Models
         public IList<Instruction> Instructions { get; set; }
         public IList<RecipeCategory> RecipeCategories { get; set; }
         //public IEnumerable<TimeInterval> TimeIntervals { get; set; }
+
+        public bool Equals(Recipe obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.TitleShort == obj.TitleShort &&
+                this.TitleLong == obj.TitleLong &&
+                this.Description == obj.Description &&
+                this.OriginalLink == obj.OriginalLink &&
+                this.LastModifier == obj.LastModifier &&
+                this.AuditDate == obj.AuditDate &&
+                this.CreationDate == obj.CreationDate
+                );
+        }
+
         public override string ToString()
         {
             return JsonSerializer.Serialize(this);

@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("categories")]
-    public class Category : ICustomModel
+    public class Category : ICustomModel<Category>
     {
 
         public Category()
@@ -29,6 +29,15 @@ namespace RecipesApi.Models
 
         [JsonIgnore]
         public IEnumerable<RecipeCategory> RecipeCategories { get; set; }
+
+        public bool Equals(Category obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.Name == obj.Name &&
+                this.Description == obj.Description
+                );
+        }
 
         public override string ToString()
         {

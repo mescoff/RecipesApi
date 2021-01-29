@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
     [Table("recipe_timeintervals")]
-    public class TimeInterval : ICustomModel
+    public class TimeInterval : ICustomModel<TimeInterval>
     {
         public TimeInterval()
         {
@@ -26,6 +27,19 @@ namespace RecipesApi.Models
         public TimeIntervalLabel Label { get; set; }
 
         public IEnumerable<TimeIntervalSpan> TimeSpans { get; set; }
+
+        public bool Equals(TimeInterval obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.IntervalLabel_Id == obj.IntervalLabel_Id &&
+                this.Label == obj.Label
+                );
+        }
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
 
     }
 }

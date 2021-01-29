@@ -6,21 +6,23 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("recipe_instructions")]
-    public class Instruction : ICustomModel
+    public class Instruction : ICustomModel<Instruction>
     {
         [Key]
         [Column("RecipeInst_Id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Required]
+        //[Required] Not necessary since it will always default to 0 on creation and int cannot be null
+        [Range(1, int.MaxValue, ErrorMessage = "Please enter a value bigger than 0")]
         public int StepNum { get; set; }
 
         [Required]
-        [MaxLength(500)]
+        [MaxLength(500, ErrorMessage = "Description cannot be longer than 500 characters")]
         public string Description { get; set; }
 
-        [Required]
+        //[Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Instruction needs a valid Recipe_Id")]
         public int Recipe_Id { get; set; }
 
         [ForeignKey("Recipe_Id")]
@@ -32,6 +34,17 @@ namespace RecipesApi.Models
 
         [ForeignKey("RecipeMedia_Id")]
         public Media Media { get; set; }
+
+        public bool Equals(Instruction obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.StepNum == obj.StepNum &&
+                this.Description == obj.Description &&
+                this.Recipe_Id == obj.Recipe_Id &&
+                this.RecipeMedia_Id == obj.RecipeMedia_Id
+             );
+        }
 
         public override string ToString()
         {

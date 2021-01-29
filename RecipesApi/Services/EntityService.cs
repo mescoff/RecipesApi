@@ -15,7 +15,7 @@ namespace RecipesApi.Services
     /// Generic entry service
     /// </summary>
     /// <typeparam name="T">The type/object handled by the service</typeparam>
-    public abstract class EntityService<T> : IEntityService<T> where T: class, ICustomModel
+    public abstract class EntityService<T> : IEntityService<T> where T: class, ICustomModel<T>
     {
 
         protected readonly RecipesContext Context;
@@ -95,7 +95,8 @@ namespace RecipesApi.Services
             catch(Exception e)
             {             
                 this.Entities.Remove(input);
-                var errorMessage = $"Error while saving entity. Rolling back changes: Entity={input} ErrorMessage={e.InnerException?.Message}";
+                //var errorMessage = $"Error while saving entity. Rolling back changes: Entity={input} ErrorType={e} ErrorMessage={e.InnerException?.Message}";
+                var errorMessage = $"Error while saving entity. Rolling back changes: ENTITYTYPE:[{input.GetType().Name}] ENTITY: [{input}] ERROR: [{e}]";
                 _logger.LogError(errorMessage);
                 response.Message = errorMessage;
             }

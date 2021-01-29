@@ -8,30 +8,28 @@ using System;
 namespace RecipesApi.Models
 {
     [Table("recipe_ingredients")]
-    public class Ingredient: ICustomModel, IEquatable<Ingredient>  // TODO: Move IEquatable to ICustomModel
+    public class Ingredient: ICustomModel<Ingredient>  // TODO: Move IEquatable to ICustomModel
     {
         [Key]
         [Column("RecipeIng_Id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
+
         [Required]
+        [MaxLength(100, ErrorMessage ="Ingredient name cannot be longer than 100 characters")]
         public string Name { get; set; }
 
-        [Required]
+        [Range(0.1, double.MaxValue, ErrorMessage = "Please enter a quantity of 0.1 or greater")]
         public double Quantity { get; set; }
 
-        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Ingredient needs a valid Recipe_Id")]
         public int Recipe_Id { get; set; }
 
         [ForeignKey("Recipe_Id")]
         [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
         public Recipe Recipe {get; set;}
-        //public virtual RecipeBase Recipe {get; set;}
 
-        //public RecipeBase Recipe { get; set; }
-
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Ingredient needs a Unit Id")]
+        [Range(1, int.MaxValue, ErrorMessage = "Ingredient needs a valid Unit_Id")]
         public int Unit_Id { get; set; }
 
         [ForeignKey("Unit_Id")]
@@ -43,7 +41,7 @@ namespace RecipesApi.Models
         }
 
 
-        public  bool Equals(Ingredient obj)
+        public bool Equals(Ingredient obj)
         {
             return (
                 this.Id == obj.Id &&

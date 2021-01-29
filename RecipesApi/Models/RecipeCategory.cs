@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("recipe_categories")]
-    public class RecipeCategory : ICustomModel
+    public class RecipeCategory : ICustomModel<RecipeCategory>
     {
         [Key]
         [Column("RecipeCat_Id")]
@@ -26,6 +26,15 @@ namespace RecipesApi.Models
         [ForeignKey("Category_Id")]
         //[JsonIgnore]
         public Category Category { get; set; }
+
+        public bool Equals(RecipeCategory obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.Recipe_Id == obj.Recipe_Id &&
+                this.Category_Id == obj.Category_Id
+                );
+        }
 
         public override string ToString()
         {

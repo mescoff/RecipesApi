@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace RecipesApi.Models
 {
     [Table("units")]
-    public class Unit: ICustomModel
+    public class Unit : ICustomModel<Unit>
     {
         [Key]
         [Column("Unit_Id")]
@@ -15,6 +15,15 @@ namespace RecipesApi.Models
         public string Name { get; set; }
         [Required]
         public string Symbol { get; set; }
+
+        public bool Equals(Unit obj)
+        {
+            return (
+                this.Id == obj.Id &&
+                this.Name == obj.Name &&
+                this.Symbol == obj.Symbol
+                );
+        }
 
         public override string ToString()
         {
