@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using RecipesApi.Models;
 using System.Threading.Tasks;
 using System;
+using RecipesApi.Utils;
 
 namespace RecipesApi.Tests.Services
 {
@@ -13,11 +14,14 @@ namespace RecipesApi.Tests.Services
     public class RecipeServiceRecipeTests
     {
         private Mock<ILogger<RecipesService>> _logger;
+        private Mock<IMediaLogicHelper> _mediaHelper;
 
         [SetUp]
         public void Setup()
         {
             this._logger = new Mock<ILogger<RecipesService>>();
+            this._mediaHelper = new Mock<IMediaLogicHelper>();
+            this._mediaHelper.SetupGet(h => h.FullMediaPath).Returns("C:\\Users\\Manon\\Programming\\Apps\\Recipes\\Media\\2301\\RecipeImages\\SpinashTart");
         }
 
         #region Update
@@ -38,7 +42,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeUpdate = await service.GetOne(4);
 
                     // modifying recipe properties
@@ -79,7 +83,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeUpdate = await service.GetOne(4);
 
                     var currentTime = DateTime.Now;
@@ -116,7 +120,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeUpdate = await service.GetOne(4);
 
                     var currentTime = DateTime.Now;
@@ -154,7 +158,7 @@ namespace RecipesApi.Tests.Services
                 SetupBasicContext(options); // TODO: move into setup?
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var newRecipe = new Recipe { Description = "Something", LastModifier = "xx", TitleShort = null };
                     // 
                     //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
@@ -190,7 +194,7 @@ namespace RecipesApi.Tests.Services
                 SetupBasicContext(options); // TODO: move into setup?
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var rdm = new Random();
                     var shortTitle = rdm.GenerateRandomString(52);
                     var length = shortTitle.Length;

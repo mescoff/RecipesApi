@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using RecipesApi.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using RecipesApi.Utils;
 
 namespace RecipesApi.Tests.Services
 {
@@ -15,11 +16,14 @@ namespace RecipesApi.Tests.Services
     public class RecipeServiceInstructionsTests
     {
         private Mock<ILogger<RecipesService>> _logger;
+        private Mock<IMediaLogicHelper> _mediaHelper;
 
         [SetUp]
         public void Setup()
         {
             this._logger = new Mock<ILogger<RecipesService>>();
+            this._mediaHelper = new Mock<IMediaLogicHelper>();
+            this._mediaHelper.SetupGet(h => h.FullMediaPath).Returns("C:\\Users\\Manon\\Programming\\Apps\\Recipes\\Media\\2301\\RecipeImages\\SpinashTart");
         }
 
         #region Update Recipe instructions
@@ -40,17 +44,56 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredients to recipe
-                    recipeToUpdate.Instructions.Add(new Instruction { Id = 3, StepNum = 3, Description = "Go do something", Recipe_Id = recipeToUpdate.Id });                                         
-                    recipeToUpdate.Instructions.Add(new Instruction { Id = 4, StepNum = 4, Description = "Done", Recipe_Id = recipeToUpdate.Id });
+                    recipeToUpdate.Instructions.Add(new Instruction { Id = 0, StepNum = 3, Description = "Go do something", Recipe_Id = recipeToUpdate.Id });                                         
+                    recipeToUpdate.Instructions.Add(new Instruction { Id = 0, StepNum = 4, Description = "Done", Recipe_Id = recipeToUpdate.Id });
                     await service.UpdateOne(recipeToUpdate);
 
                     var dbrecipe = await service.GetOne(4);
                     Assert.AreEqual(4, dbrecipe.Instructions.Count());
                     var instructiontThree = dbrecipe.Instructions.FirstOrDefault(i => i.Id == 3);
+                    Assert.AreEqual("Go do something", instructiontThree.Description);
+                    Assert.AreEqual(3, instructiontThree.StepNum);
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test]
+        public async Task RecipeUpdate_NewInstructionWithGivenId_IsAddedAndAssignedNewIdByDatabase()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options);
+
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var recipeToUpdate = await service.GetOne(4);
+
+                    // Add Ingredient with ID that doesn't exist yet
+                    recipeToUpdate.Instructions.Add(new Instruction { Id = 75, StepNum = 3, Description = "Go do something", Recipe_Id = recipeToUpdate.Id });
+                    await service.UpdateOne(recipeToUpdate);
+
+                    var dbrecipe = await service.GetOne(4);
+                    Assert.AreEqual(3, dbrecipe.Instructions.Count());
+                    // According to our context, DB should override provided ID and assign ID 3 to this instruction
+                    var instructiontThree = dbrecipe.Instructions.FirstOrDefault(i => i.Id == 3);
+                    Assert.IsNotNull(instructiontThree);
                     Assert.AreEqual("Go do something", instructiontThree.Description);
                     Assert.AreEqual(3, instructiontThree.StepNum);
                 }
@@ -78,7 +121,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove all instructions
@@ -113,7 +156,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove instruction with Id = 1
@@ -152,7 +195,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Update instruction with Id:1's Name and Unit
@@ -193,7 +236,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // modifying recipe properties
@@ -241,7 +284,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     // todo: is this bad practice? Should I just recreate an object Recipe here, with same Id? (Since we want to reproduce offline example). To avoid tracked/extra entities..
                     // get recipe with Id 4
                     var recipeToUpdate = await service.GetOne(4);
@@ -320,8 +363,8 @@ namespace RecipesApi.Tests.Services
                     AuditDate = null,
                     CreationDate = null,
                     Instructions = new List<Instruction> {
-                        new Instruction { Id = 1, StepNum = 1, Description = "Fire up the Oven for 10 min", Recipe_Id = 4 },
-                        new Instruction { Id = 2, StepNum = 2, Description = "Start cutting stuff", Recipe_Id = 4 }
+                        new Instruction { StepNum = 1, Description = "Fire up the Oven for 10 min", Recipe_Id = 4 },
+                        new Instruction { StepNum = 2, Description = "Start cutting stuff", Recipe_Id = 4 }
                     }
                 });
                 context.SaveChanges();

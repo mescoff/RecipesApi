@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RecipesApi.Models;
 using RecipesApi.Services;
+using RecipesApi.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -17,8 +18,9 @@ namespace RecipesApi
     /// </summary>
     public class RecipesService : EntityService<Recipe>  //IEntityService<RecipeBase>
     {
+        protected readonly IMediaLogicHelper MediaHelper;
 
-        public RecipesService(RecipesContext context, ILogger<RecipesService> logger) : base(context, logger)
+        public RecipesService(RecipesContext context, ILogger<RecipesService> logger, IMediaLogicHelper mediaHelper) : base(context, logger)
         {
         }
 
@@ -55,13 +57,13 @@ namespace RecipesApi
 
 
                     // Update Ingredients
-                    ScanAndApplyChanges(updatedRecipe.Ingredients, dbRecipe.Ingredients);
+                    ScanAndApplyChanges<Ingredient>(updatedRecipe.Ingredients, dbRecipe.Ingredients);
 
                     // Update Instrutions
-                    ScanAndApplyChanges(updatedRecipe.Instructions, dbRecipe.Instructions);
+                    ScanAndApplyChanges<Instruction>(updatedRecipe.Instructions, dbRecipe.Instructions);
 
                     // Update Media
-                    ScanAndApplyChanges(updatedRecipe.Instructions, dbRecipe.Instructions);
+                    ScanMediaUpdates(updatedRecipe.Media, dbRecipe.Media);
 
                     // Update recipe itself
                     // TODO: (1) test with just update instead of below. (2) check if we shouldn't do below when updating related entities (rather than using update)
@@ -180,6 +182,19 @@ namespace RecipesApi
         }
 
 
+        private void ScanMediaUpdates(IList<Media> updatedRecipeItems, IList<Media> existingRecipeItems)
+        {
+            var existingRecipeItemsIds = existingRecipeItems.Select(i => i.Id);  // items ids from DB recipe
+            var updatedRecipeItemsIds = updatedRecipeItems.Select(i => i.Id);      // items ids from updated recipe
+
+            // ADD ALL items if DB recipe doesn't have any yet
+            if (!existingRecipeItemsIds.Any())
+            {
+                //
+                //Context.AddRange(updatedRecipeItems);
+            }
+        }
+
         /// <summary>
         /// Scan all of the received/update recipe related entities/children and check for additions, removals and updates. And apply them
         /// </summary>
@@ -194,6 +209,11 @@ namespace RecipesApi
             // ADD ALL items if DB recipe doesn't have any yet
             if (!existingRecipeItemsIds.Any())
             {
+                // reset Ids to ensure DB will apply its own
+                foreach(var item in updatedRecipeItems)
+                {
+                    item.Id = 0;
+                }
                 Context.AddRange(updatedRecipeItems);
             }
             else
@@ -202,9 +222,16 @@ namespace RecipesApi
                 var itemsIdsToAdd = updatedRecipeItemsIds.Except(existingRecipeItemsIds); // get items Ids in updated recipe missing from existing recipe
 
                 // ADD items not present in DB recipe
+                // TODO: Below should probably just look for items with Id=0. Client shouldn't send items with Id that doesn't exist yet.
+                // TODO: Actually check what happens when providing recipe with Id = 75. Is it reset by DB or is it added as 75. ANd then we need to reset to 0 before saving to avoid wholes
                 if (itemsIdsToAdd.Count() > 0)
                 {
                     var ingredientsToAdd = updatedRecipeItems.Where(i => itemsIdsToAdd.Contains(i.Id));
+                    // reset Ids to ensure DB will apply its own
+                    foreach (var item in ingredientsToAdd)
+                    {
+                        item.Id = 0;
+                    }
                     this.Context.Set<TEntity>().AddRange(ingredientsToAdd);
                 }
 
