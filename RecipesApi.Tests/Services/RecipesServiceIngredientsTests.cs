@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using RecipesApi.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using RecipesApi.Utils;
 
 namespace RecipesApi.Tests.Services
 {
@@ -15,11 +16,14 @@ namespace RecipesApi.Tests.Services
     public class RecipeServiceIngredientsTests
     {
         private Mock<ILogger<RecipesService>> _logger;
+        private Mock<IMediaLogicHelper> _mediaHelper;
 
         [SetUp]
         public void Setup()
         {
             this._logger = new Mock<ILogger<RecipesService>>();
+            this._mediaHelper = new Mock<IMediaLogicHelper>();
+            this._mediaHelper.SetupGet(h => h.FullMediaPath).Returns("C:\\Users\\Manon\\Programming\\Apps\\Recipes\\Media\\2301\\RecipeImages\\SpinashTart");
         }
 
         #region Update Recipe ingredients 
@@ -40,20 +44,60 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredients to recipe
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 3, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 4, Name = "Flour", Quantity = 3, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
+                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 0, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
+                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 0, Name = "Flour", Quantity = 3, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
                     await service.UpdateOne(recipeToUpdate);
 
                     var dbrecipe = await service.GetOne(4);
                     Assert.AreEqual(4, dbrecipe.Ingredients.Count());
-                    var ingredientOne = dbrecipe.Ingredients.FirstOrDefault(i => i.Id == 3);
-                    Assert.AreEqual("Butter", ingredientOne.Name);
-                    Assert.AreEqual(2, ingredientOne.Quantity);
-                    Assert.AreEqual(3, ingredientOne.Unit_Id);
+                    var newIngredient = dbrecipe.Ingredients.FirstOrDefault(i => i.Id == 3);
+                    Assert.AreEqual("Butter", newIngredient.Name);
+                    Assert.AreEqual(2, newIngredient.Quantity);
+                    Assert.AreEqual(3, newIngredient.Unit_Id);
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+
+        [Test]
+        public async Task RecipeUpdate_NewIngredientWithGivenId_IsAddedAndAssignedNewIdByDatabase()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options);
+
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var recipeToUpdate = await service.GetOne(4);
+
+                    // Add Ingredients to recipe
+                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 84, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
+                    await service.UpdateOne(recipeToUpdate);
+
+                    var dbrecipe = await service.GetOne(4);
+                    Assert.AreEqual(3, dbrecipe.Ingredients.Count());
+                    // According to our context, DB should override provided ID and assign ID 3 to this ingredient
+                    var newIngredient = dbrecipe.Ingredients.FirstOrDefault(i => i.Id == 3);
+                    Assert.AreEqual("Butter", newIngredient.Name);
+                    Assert.AreEqual(2, newIngredient.Quantity);
+                    Assert.AreEqual(3, newIngredient.Unit_Id);
                 }
             }
             finally
@@ -79,7 +123,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove all ingredients
@@ -114,7 +158,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove ingredient with Id = 1
@@ -152,7 +196,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Update ingredient with Id:1's Name and Unit
@@ -194,7 +238,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // modifying recipe properties
@@ -243,7 +287,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object);
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     // todo: is this bad practice? Should I just recreate an object Recipe here, with same Id? (Since we want to reproduce offline example). To avoid tracked/extra entities..
                     // get recipe with Id 4
                     var recipeToUpdate = await service.GetOne(4);
@@ -258,7 +302,7 @@ namespace RecipesApi.Tests.Services
                     recipeToUpdate.Ingredients.Add(new Ingredient { Id = ingredient2.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient2.Recipe_Id });
 
                     // Add new ingredient
-                    var ingredient3 = new Ingredient() { Id = 3, Name = "Flour", Quantity = 3, Unit_Id = 1, Recipe_Id = 4 };
+                    var ingredient3 = new Ingredient() { Id = 0, Name = "Flour", Quantity = 3, Unit_Id = 1, Recipe_Id = 4 };
                     recipeToUpdate.Ingredients.Add(ingredient3);
 
                     // Get recipe again from db and verify all changes worked
@@ -323,27 +367,12 @@ namespace RecipesApi.Tests.Services
                     AuditDate = new DateTime(2019, 12, 03),
                     CreationDate = new DateTime(),
                     Ingredients = new List<Ingredient> {
-                        new Ingredient { Id = 1, Name = "Chocolate", Quantity = 4, Unit_Id = 1 },
-                        new Ingredient { Id = 2, Name = "Flour", Quantity = 4, Unit_Id = 1 }
+                        new Ingredient { Id = 0, Name = "Chocolate", Quantity = 4, Unit_Id = 1 },
+                        new Ingredient { Id = 0, Name = "Flour", Quantity = 4, Unit_Id = 1 }
                     }
                 });
                 context.SaveChanges();
             }
         }
-
-
-
-        //private static void RecipeServiceTestsHelper.EnsureCreated(RecipesContext context)
-        //{
-        //    if (context.Database.RecipeServiceTestsHelper.EnsureCreated())
-        //    {
-        //        using var viewCommand = context.Database.GetDbConnection().CreateCommand();
-        //        viewCommand.CommandText = @"
-        //                CREATE VIEW AllResources AS
-        //                SELECT *
-        //                FROM Recipes;";
-        //        viewCommand.ExecuteNonQuery();
-        //    }
-        //}
     }
 }

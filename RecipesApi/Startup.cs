@@ -11,6 +11,7 @@ using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Pomelo.EntityFrameworkCore.MySql.Storage;
 using RecipesApi.Models;
 using RecipesApi.Services;
+using RecipesApi.Utils;
 using System;
 using System.IO;
 using System.Reflection;
@@ -54,10 +55,11 @@ namespace RecipesApi
                 options
                     //.UseLoggerFactory(ConsoleLoggerFactory)
                     .EnableSensitiveDataLogging()
-                    .UseMySql(
-                    Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 18)))
+                    .UseMySql(Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 18)))
                 //mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
                 );
+            services.AddScoped<IMediaLogicHelper, MediaLogicHelper>();
+
             services.AddScoped<IEntityService<Recipe>,RecipesService>();
             services.AddScoped<IEntityService<Category>,CategoryService>();
             services.AddScoped<IEntityService<RecipeCategory>, RecipeCategoryService>();

@@ -4,9 +4,6 @@ using RecipesApi.Models;
 using RecipesApi.Utils;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace RecipesApi.Services
@@ -40,7 +37,7 @@ namespace RecipesApi.Services
             }
             catch (Exception e)
             {
-                this._logger.LogError($"Something happened: {e.InnerException}", e.InnerException);
+                this._logger.LogError($"Something happened: {e.InnerException}", e);
                 throw e;
             }
         }

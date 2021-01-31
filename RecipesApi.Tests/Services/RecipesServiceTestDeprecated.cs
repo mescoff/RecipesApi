@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using RecipesApi.Models;
+using RecipesApi.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -20,15 +21,15 @@ namespace RecipesApi.Tests.Services
     {
         private Mock<IEntityService<Recipe>> _recipeServicesMock;
         private Mock<ILogger<RecipesService>> _logger;
+        private Mock<IMediaLogicHelper> _mediaHelper;
 
         [SetUp]
         public void Setup()
         {
             //this._logger = new Mock<ILogger<IEntityService<Recipe>>>();
             this._logger = new Mock<ILogger<RecipesService>>();
-            // this._recipeServicesMock = new Mock<IEntityService<Recipe>>();
-            // var dbContext = await TestUtils.GetRecipesContext();
-            // this._recipeServicesMock.Setup(r => r.GetAll()).Returns(dbContext.Recipes);
+            this._mediaHelper = new Mock<IMediaLogicHelper>();
+            this._mediaHelper.SetupGet(h => h.FullMediaPath).Returns("C:\\Users\\Manon\\Programming\\Apps\\Recipes\\Media\\2301\\RecipeImages\\SpinashTart");
         }
 
         [Test]
@@ -227,7 +228,7 @@ namespace RecipesApi.Tests.Services
 
             private IEntityService<Recipe> setupService(RecipesContext dbContext)
         {
-            return new RecipesService(dbContext, this._logger.Object);
+            return new RecipesService(dbContext, this._logger.Object, this._mediaHelper.Object);
         }
 
     }

@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.Serialization;
 
 namespace RecipesApi.DTOs
 {
@@ -9,9 +10,11 @@ namespace RecipesApi.DTOs
         public int Id { get; set; }
 
         [DataMember]
+        [Required]
         public byte[] MediaBytes { get; set; }
 
         [DataMember]
+        [Required]
         public string Title { get; set; }
 
         [DataMember]
@@ -19,6 +22,5 @@ namespace RecipesApi.DTOs
 
         [DataMember]
         public int Recipe_Id { get; set; }
-
     }
 }
