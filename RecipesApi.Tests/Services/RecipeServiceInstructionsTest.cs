@@ -9,6 +9,7 @@ using RecipesApi.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using RecipesApi.Utils;
+using RecipesApi.DTOs;
 
 namespace RecipesApi.Tests.Services
 {
@@ -23,7 +24,7 @@ namespace RecipesApi.Tests.Services
         {
             this._logger = new Mock<ILogger<RecipesService>>();
             this._mediaHelper = new Mock<IMediaLogicHelper>();
-            this._mediaHelper.SetupGet(h => h.FullMediaPath).Returns("C:\\Users\\Manon\\Programming\\Apps\\Recipes\\Media\\2301\\RecipeImages\\SpinashTart");
+            this._mediaHelper.Setup(h => h.LocateAndLoadMedias(It.IsAny<IEnumerable<Media>>())).Returns(new List<MediaDto>());
         }
 
         #region Update Recipe instructions
@@ -48,7 +49,7 @@ namespace RecipesApi.Tests.Services
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredients to recipe
-                    recipeToUpdate.Instructions.Add(new Instruction { Id = 0, StepNum = 3, Description = "Go do something", Recipe_Id = recipeToUpdate.Id });                                         
+                    recipeToUpdate.Instructions.Add(new Instruction { Id = 0, StepNum = 3, Description = "Go do something", Recipe_Id = recipeToUpdate.Id });
                     recipeToUpdate.Instructions.Add(new Instruction { Id = 0, StepNum = 4, Description = "Done", Recipe_Id = recipeToUpdate.Id });
                     await service.UpdateOne(recipeToUpdate);
 
@@ -331,12 +332,14 @@ namespace RecipesApi.Tests.Services
             // Create the schema in the database
             using (var context = new RecipesContext(options))
             {
-                RecipeServiceTestsHelper.EnsureCreated(context);
-            }
+                //    RecipeServiceTestsHelper.EnsureCreated(context);
+                //}
 
-            // Run the test against one instance of the context
-            using (var context = new RecipesContext(options))
-            {
+                //// Run the test against one instance of the context
+                //using (var context = new RecipesContext(options))
+                //{
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
                 // Adding 2 units
                 context.Units.Add(new Unit()
                 {

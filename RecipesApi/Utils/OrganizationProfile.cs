@@ -26,6 +26,7 @@ namespace RecipesApi.Utils
             CreateMap<Recipe, GetRecipeDto>()
                 .ForMember(dto => dto.Categories, r => r.MapFrom(r => r.RecipeCategories.Select(rc => rc.Category)));
             CreateMap<PushRecipeDto, Recipe>();
+            // TODO: look into mapping both ways in one line
             //CreateMap<Category, GetCategoryDto>();
             //CreateMap<RecipeBaseDto, Recipe>();
         }

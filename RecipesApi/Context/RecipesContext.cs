@@ -31,6 +31,7 @@ namespace RecipesApi
         public DbSet<Instruction> Instructions { get; set; }
         public DbSet<Ingredient> Ingredients { get; set; }
         public DbSet<TimeInterval> TimeIntervals { get; set; }
+        public DbSet<Media> Medias { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

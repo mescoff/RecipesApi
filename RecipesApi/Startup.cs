@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Pomelo.EntityFrameworkCore.MySql.Storage;
+using RecipesApi.DTOs.Recipes;
 using RecipesApi.Models;
 using RecipesApi.Services;
 using RecipesApi.Utils;
@@ -60,12 +61,13 @@ namespace RecipesApi
                 );
             services.AddScoped<IMediaLogicHelper, MediaLogicHelper>();
 
-            services.AddScoped<IEntityService<Recipe>,RecipesService>();
+            services.AddScoped<IRecipesService<RecipeDto>,RecipesService>();
+
             services.AddScoped<IEntityService<Category>,CategoryService>();
             services.AddScoped<IEntityService<RecipeCategory>, RecipeCategoryService>();
             services.AddScoped<IEntityService<Ingredient>,IngredientsService>();
             services.AddScoped<IEntityService<Unit>,UnitsService>();
-            services.AddScoped<IEntityService<Media>,MediaService>();
+            //services.AddScoped<IEntityService<Media>,MediaService>();
             services.AddScoped<IEntityService<Instruction>,InstructionsService>();
             services.AddScoped<IEntityService<TimeInterval>,TimeIntervalsService>();
             // Register the Swagger generator, defining 1 or more Swagger documents

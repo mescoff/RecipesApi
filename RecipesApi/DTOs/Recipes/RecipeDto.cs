@@ -12,7 +12,12 @@ namespace RecipesApi.DTOs.Recipes
     /// </summary>
     public class RecipeDto: Recipe, ICustomModel<RecipeDto>
     {       
-        public new IEnumerable<MediaDto> Media { get; set; }
+        public RecipeDto()
+        {
+            this.Medias = new List<MediaDto>();
+        }
+
+        public new IList<MediaDto> Medias { get; set; }
 
         public bool Equals(RecipeDto obj)
         {

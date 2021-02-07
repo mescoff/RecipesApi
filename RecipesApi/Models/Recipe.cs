@@ -1,5 +1,4 @@
-﻿using RecipesApi.Validate;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -15,7 +14,7 @@ namespace RecipesApi.Models
         public Recipe()
         {
             this.Ingredients = new List<Ingredient>();
-            this.Media = new List<Media>();
+            this.Medias = new List<Media>();
             this.Instructions = new List<Instruction>();
             this.RecipeCategories = new List<RecipeCategory>();
         }
@@ -26,21 +25,23 @@ namespace RecipesApi.Models
         public int Id { get; set; }
 
         [Required]
-        [StringLength(50, MinimumLength = 5)]
+        [StringLength(50, MinimumLength = 5, ErrorMessage = "The Recipe's short Title length needs to be between 5 and 50 characters")]
         public string TitleShort { get; set; }
 
-        [StringLength(150)]
+        [StringLength(150, ErrorMessage = "The Recipe's long Title length cannot exceed 150 characters")]
         public string TitleLong { get; set; }
 
         [Required]
-        [StringLength(2000)]
+        [StringLength(2000, ErrorMessage = "The Recipe's description length cannot exceed 2000 characters")]
         public string Description { get; set; }
 
-        [StringLength(500)]
+        [StringLength(500, ErrorMessage = "The Recipe's original link length cannot exceed 500 characters")]
+        [RegularExpression(@"^((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)$",
+            ErrorMessage = "Link provided is not a valid URL")]
         public string OriginalLink { get; set; }
 
         [Required]
-        [StringLength(500)]
+        [StringLength(500, ErrorMessage = "The Recipe's last modifier length cannot exceed 2000 characters")]
         public string LastModifier { get; set; }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
@@ -50,7 +51,7 @@ namespace RecipesApi.Models
         public DateTime? CreationDate { get; set; }
 
         public IList<Ingredient> Ingredients { get; set; }
-        public IList<Media> Media { get; set; }
+        public IList<Media> Medias { get; set; }
         public IList<Instruction> Instructions { get; set; }
         public IList<RecipeCategory> RecipeCategories { get; set; }
         //public IEnumerable<TimeInterval> TimeIntervals { get; set; }
