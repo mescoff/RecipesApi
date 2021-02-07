@@ -7,6 +7,10 @@ using RecipesApi.Models;
 using System.Threading.Tasks;
 using System;
 using RecipesApi.Utils;
+using RecipesApi.DTOs.Recipes;
+using System.Collections.Generic;
+using RecipesApi.DTOs;
+using System.Text.RegularExpressions;
 
 namespace RecipesApi.Tests.Services
 {
@@ -21,8 +25,139 @@ namespace RecipesApi.Tests.Services
         {
             this._logger = new Mock<ILogger<RecipesService>>();
             this._mediaHelper = new Mock<IMediaLogicHelper>();
-            this._mediaHelper.SetupGet(h => h.FullMediaPath).Returns("C:\\Users\\Manon\\Programming\\Apps\\Recipes\\Media\\2301\\RecipeImages\\SpinashTart");
+            this._mediaHelper.Setup(h => h.LocateAndLoadMedias(It.IsAny<IEnumerable<Media>>())).Returns(new List<MediaDto>());
         }
+
+        #region Add
+        [Test]
+        // Test adding recipe with instructions/ingredients/all props and 1 media
+        public async Task RecipeAdd_WithAllProperties_Works()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options); // TODO: move into setup?
+                int createdRecipeId = -1;
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var newRecipe = new RecipeDto
+                    {
+                        Description = "Something",
+                        LastModifier = "xx",
+                        TitleShort = "NewRecipe",
+                        TitleLong = "Gorgeous wedding cake",
+                        OriginalLink = "https://www.foodnetwork.com/recipes/geoffrey-zakarian/classic-gin-gimlet-2341489",
+                        Id = 5 // should reset to 0 and be assigned by DB
+                    };
+
+                    var response = await service.AddOne(newRecipe);
+                    Assert.IsTrue(response.Success);
+                    var rgx = new Regex(@"^.*Id:(?<id>[0-9])$");
+                    var match = rgx.Match(response.Message);
+                    createdRecipeId = Convert.ToInt32(match.Groups["id"].Value);
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var recipe = await service.GetOne(createdRecipeId);
+
+                    Assert.AreEqual("Something", recipe.Description);
+                    Assert.AreEqual("xx", recipe.LastModifier);
+                    Assert.AreEqual("NewRecipe", recipe.TitleShort);
+                    Assert.AreEqual("Gorgeous wedding cake", recipe.TitleLong);
+                    Assert.AreEqual("https://www.foodnetwork.com/recipes/geoffrey-zakarian/classic-gin-gimlet-2341489", recipe.OriginalLink);
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test]
+        public async Task RecipeAdd_WithNullShortTitle_Fails()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options); // TODO: move into setup?
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var newRecipe = new RecipeDto { Description = "Something", LastModifier = "xx", TitleShort = null };
+                    // 
+                    //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
+
+                    var response = await service.AddOne(newRecipe);
+                    Assert.IsFalse(response.Success);
+                    Assert.IsTrue(response.Message.Contains("Microsoft.EntityFrameworkCore.DbUpdateException"));
+                    Assert.IsTrue(response.Message.Contains("SQLite Error 19"));
+                    Assert.IsTrue(response.Message.Contains("NOT NULL constraint failed: recipes.TitleShort"));
+                }
+
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test]
+        [Ignore("Not working at the moment")]
+        // TODO: isn't this handled by validation tests ?
+        public async Task RecipeAdd_WithShortTitleLongerThan50Char_Fails()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options); // TODO: move into setup?
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var rdm = new Random();
+                    var shortTitle = rdm.GenerateRandomString(52);
+                    var length = shortTitle.Length;
+                    var newRecipe = new RecipeDto { Description = "Something", LastModifier = "xx", TitleShort = shortTitle };
+                    // 
+                    //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
+
+                    var response = await service.AddOne(newRecipe);
+                    Assert.IsFalse(response.Success);
+                    Assert.IsTrue(response.Message.Contains("Microsoft.EntityFrameworkCore.DbUpdateException"));
+                    Assert.IsTrue(response.Message.Contains("SQLite Error 19"));
+                    Assert.IsTrue(response.Message.Contains("NOT NULL constraint failed: recipes.TitleShort"));
+                }
+
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        #endregion
 
         #region Update
         [Test]
@@ -51,12 +186,14 @@ namespace RecipesApi.Tests.Services
 
 
                     await service.UpdateOne(recipeUpdate);
-
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
                     // get recipe again
                     var newRecipe = await service.GetOne(4);
                     Assert.AreEqual("Banana pancakes", newRecipe.TitleShort);
                     Assert.AreEqual("https://www.something.com", newRecipe.OriginalLink);
-
                     // TODO: Test also that auditDate and creationDate are ignored (and handled by database)
                 }
             }
@@ -90,8 +227,11 @@ namespace RecipesApi.Tests.Services
                     recipeUpdate.AuditDate = currentTime;
 
                     await service.UpdateOne(recipeUpdate);
-
-                    // get recipe again
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    // get recipe again in new "request" / separate context
                     var newRecipe = await service.GetOne(4);
                     Assert.AreEqual(null, newRecipe.AuditDate); // should be unchanged, aka: should be null since it can only be generated by DB
                 }
@@ -127,8 +267,11 @@ namespace RecipesApi.Tests.Services
                     recipeUpdate.CreationDate = currentTime;
 
                     await service.UpdateOne(recipeUpdate);
-
-                    // get recipe again
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    // get recipe again in new "request" / separate context
                     var newRecipe = await service.GetOne(4);
                     Assert.AreEqual(null, newRecipe.CreationDate); // should be unchanged, aka: should be null since it can only be generated by DB
                 }
@@ -141,81 +284,6 @@ namespace RecipesApi.Tests.Services
         }
         #endregion
 
-        #region Add
-        [Test]
-        public async Task RecipeAdd_WithNullShortTitle_Fails()
-        {
-            // each test creates new Connection / Options / DbSchema
-            var connection = new SqliteConnection("DataSource=:memory:");
-            connection.Open();
-
-            try
-            {
-                var options = new DbContextOptionsBuilder<RecipesContext>()
-                    .UseSqlite(connection)
-                    .Options;
-
-                SetupBasicContext(options); // TODO: move into setup?
-                using (var context = new RecipesContext(options))
-                {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
-                    var newRecipe = new Recipe { Description = "Something", LastModifier = "xx", TitleShort = null };
-                    // 
-                    //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
-
-                    var response = await service.AddOne(newRecipe);
-                    Assert.IsFalse(response.Success);
-                    Assert.IsTrue(response.Message.Contains("Microsoft.EntityFrameworkCore.DbUpdateException"));
-                    Assert.IsTrue(response.Message.Contains("SQLite Error 19"));
-                    Assert.IsTrue(response.Message.Contains("NOT NULL constraint failed: recipes.TitleShort"));
-                }
-
-            }
-            finally
-            {
-                connection.Close();
-            }
-        }
-
-        [Test]
-        [Ignore("Not working at the moment")]
-        public async Task RecipeAdd_WithShortTitleLongerThan50Char_Fails()
-        {
-            // each test creates new Connection / Options / DbSchema
-            var connection = new SqliteConnection("DataSource=:memory:");
-            connection.Open();
-
-            try
-            {
-                var options = new DbContextOptionsBuilder<RecipesContext>()
-                    .UseSqlite(connection)
-                    .Options;
-
-                SetupBasicContext(options); // TODO: move into setup?
-                using (var context = new RecipesContext(options))
-                {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
-                    var rdm = new Random();
-                    var shortTitle = rdm.GenerateRandomString(52);
-                    var length = shortTitle.Length;
-                    var newRecipe = new Recipe { Description = "Something", LastModifier = "xx", TitleShort = shortTitle };
-                    // 
-                    //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
-
-                    var response = await service.AddOne(newRecipe);
-                    Assert.IsFalse(response.Success);
-                    Assert.IsTrue(response.Message.Contains("Microsoft.EntityFrameworkCore.DbUpdateException"));
-                    Assert.IsTrue(response.Message.Contains("SQLite Error 19"));
-                    Assert.IsTrue(response.Message.Contains("NOT NULL constraint failed: recipes.TitleShort"));
-                }
-
-            }
-            finally
-            {
-                connection.Close();
-            }
-        }
-        #endregion
 
         private void SetupBasicContext(DbContextOptions<RecipesContext> options)
         {

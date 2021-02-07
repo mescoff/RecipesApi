@@ -5,6 +5,7 @@ namespace RecipesApi.Tests.Services
 {
     public static class RecipeServiceTestsHelper
     {
+        // TODO: REMOVE
         public static void EnsureCreated(RecipesContext context)
         {
             if (context.Database.EnsureCreated())
@@ -20,7 +21,7 @@ namespace RecipesApi.Tests.Services
 
         public static string GenerateRandomString(this Random rdm, int length, string allowedChars = null)
         {
-            allowedChars = allowedChars??  "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@$?_-";
+            allowedChars = allowedChars??  "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!$?_-";
             char[] chars = new char[length];
 
             for (int i = 0; i < length; i++)

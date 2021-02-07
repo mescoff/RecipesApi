@@ -21,7 +21,7 @@ namespace RecipesApi.Services
             try
             {
                 var recipe = await this.Context.Set<Recipe>()
-                    .Include(r => r.Media)
+                    .Include(r => r.Medias)
                     .Include(r => r.RecipeCategories).ThenInclude(i => i.Category)
                     .Include(r => r.Instructions).Include(r => r.Ingredients)
                     .ThenInclude(i => i.Unit)

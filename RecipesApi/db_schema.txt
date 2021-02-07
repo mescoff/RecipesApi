@@ -39,7 +39,7 @@ CREATE TABLE recipe_ingredients(
     FOREIGN KEY (Unit_Id) REFERENCES units(Unit_Id) ON DELETE CASCADE
 );
 
-CREATE TABLE recipe_media(
+CREATE TABLE recipe_medias(
 	RecipeMedia_Id INT UNIQUE NOT NULL AUTO_INCREMENT,
     MediaPath varchar(200) NOT NULL,
     Title varchar(200) NOT NULL,

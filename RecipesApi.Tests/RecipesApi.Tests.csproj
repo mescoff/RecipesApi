@@ -2,9 +2,85 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="TestData\food.jpeg" />
+    <None Remove="TestData\Received\food.jpeg" />
+    <None Remove="TestData\Received\foodColor.jpeg" />
+    <None Remove="TestData\Received\foodMarket.jpg" />
+    <None Remove="TestData\Received\foodMarketPng.png" />
+    <None Remove="TestData\Received\tartines.jpg" />
+    <None Remove="TestData\recipeMediaDtos.json" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_AllOtherTests\foodColor.jpeg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_AllOtherTests\RecipeUpdate_UpdatingExistingMediaImage.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_AllOtherTests\tartines.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingMultipleImages\foodColor.jpeg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingMultipleImages\RecipeUpdate_UpdatingExistingMediaImage.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingMultipleImages\tartines.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingOneImage\foodColor.jpeg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingOneImage\RecipeUpdate_UpdatingExistingMediaImage.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingOneImage\tartines.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_UpdatingExistingImageBytes\foodColor.jpeg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_UpdatingExistingImageBytes\RecipeUpdate_UpdatingExistingMediaImage.jpg" />
+    <None Remove="TestData\RecipeServiceMediaTests\RecipeUpdate_UpdatingExistingImageBytes\tartines.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TestData\Received\foodMarketPng.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\Received\tartines.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\Received\foodMarket.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\Received\foodColor.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\recipeMediaDtos.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_AllOtherTests\foodColor.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_AllOtherTests\RecipeUpdate_UpdatingExistingMediaImage.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_AllOtherTests\tartines.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingMultipleImages\foodColor.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingMultipleImages\RecipeUpdate_UpdatingExistingMediaImage.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingMultipleImages\tartines.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingOneImage\foodColor.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingOneImage\RecipeUpdate_UpdatingExistingMediaImage.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_DeletingOneImage\tartines.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_UpdatingExistingImageBytes\foodColor.jpeg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_UpdatingExistingImageBytes\RecipeUpdate_UpdatingExistingMediaImage.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestData\RecipeServiceMediaTests\RecipeUpdate_UpdatingExistingImageBytes\tartines.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.2" />
@@ -21,6 +97,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RecipesApi\RecipesApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TestData\Received\OrangeJuice.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\Received\RecipeUpdate_UpdatingExistingMediaImage.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

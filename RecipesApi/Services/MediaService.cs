@@ -3,20 +3,20 @@ using RecipesApi.Models;
 
 namespace RecipesApi.Services
 {
-    public class MediaService : EntityService<Media>
-    {
-        public MediaService(RecipesContext context, ILogger<MediaService> logger) : base(context, logger)
-        {
-        }
+    //public class MediaService : EntityService<Media>
+    //{
+    //    public MediaService(RecipesContext context, ILogger<MediaService> logger) : base(context, logger)
+    //    {
+    //    }
 
-        protected override void prepareInputForCreateOrUpdate(Media input, bool isCreation)
-        {
-            // TODO: Not sure this is needed now that we added the [DatabaseGenerated(DatabaseGeneratedOption.Identity)] attribute at Model level
-            if (isCreation)
-            {
-                input.Id = 0;
-            }
-            //return input;
-        }
-    }
+    //    protected override void prepareInputForCreateOrUpdate(Media input, bool isCreation)
+    //    {
+    //        // TODO: Not sure this is needed now that we added the [DatabaseGenerated(DatabaseGeneratedOption.Identity)] attribute at Model level
+    //        if (isCreation)
+    //        {
+    //            input.Id = 0;
+    //        }
+    //        //return input;
+    //    }
+    //}
 }
