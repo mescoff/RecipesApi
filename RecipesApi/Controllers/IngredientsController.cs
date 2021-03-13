@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using RecipesApi.DTOs;
-using RecipesApi.DTOs.Ingredients;
 using RecipesApi.Models;
 
 namespace RecipesApi.Controllers
@@ -53,7 +51,7 @@ namespace RecipesApi.Controllers
                 return NoContent();
             }
             this.AddCountToHeader(ingredients);
-            return Ok(this._mapper.Map<List<Ingredient>, List<GetIngredientDto>>(ingredients));
+            return Ok(this._mapper.Map<List<Ingredient>, List<IngredientBase>>(ingredients));
         }
 
         /// <summary>
@@ -75,7 +73,7 @@ namespace RecipesApi.Controllers
             {
                 return NoContent();
             }
-            return Ok(this._mapper.Map<Ingredient,GetIngredientDto>(ingredient));
+            return Ok(this._mapper.Map<Ingredient,IngredientBase>(ingredient));
         }
 
         /// <summary>
@@ -98,10 +96,10 @@ namespace RecipesApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> Post([FromBody] PushIngredientDto input)
+        public async Task<ActionResult> Post([FromBody] IngredientBase input)
         {
             //TODO: add standard on naming
-            var ingredient = this._mapper.Map<PushIngredientDto, Ingredient>(input);
+            var ingredient = this._mapper.Map<IngredientBase, Ingredient>(input);
             var response = await this._ingredientsService.AddOne(ingredient);
             // this._context.Ingredients.Add(ingredient);
             // FIXME: Bug on saving new ingredient..
@@ -125,9 +123,9 @@ namespace RecipesApi.Controllers
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult> Put([FromBody] PushIngredientDto input)
+        public async Task<ActionResult> Put([FromBody] IngredientBase input)
         {
-            var ingredient = this._mapper.Map<PushIngredientDto, Ingredient>(input);
+            var ingredient = this._mapper.Map<IngredientBase, Ingredient>(input);
             var isSuccess = await this._ingredientsService.UpdateOne(ingredient);
             if (!isSuccess)
             {

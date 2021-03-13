@@ -8,7 +8,7 @@ namespace RecipesApi.Models
 {
     [Table("recipes")]
 
-    public class Recipe : ICustomModel<Recipe>
+    public class Recipe : ICustomModel<Recipe> //, IEquatable<Recipe>
     {
 
         public Recipe()

@@ -6,7 +6,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Drawing;
-using RecipesApi.DTOs.Ingredients;
 
 namespace RecipesApi.Utils
 {
@@ -15,18 +14,15 @@ namespace RecipesApi.Utils
 
         public OrganizationProfile()
         {
-            CreateMap<Ingredient, GetIngredientDto>();
-            CreateMap<GetIngredientDto, Ingredient>();            
-            CreateMap<Ingredient, PushIngredientDto>();
-            CreateMap<PushIngredientDto, Ingredient>();
+            // TODO: Cleanup            
+            CreateMap<IngredientBase, Ingredient>().ReverseMap();
             CreateMap<MediaDto, Media>();
             CreateMap<Media, MediaDto>()
-                .ForMember(dto => dto.MediaBytes, m => m.MapFrom<CustomMediaResolver>());
+                .ForMember(dto => dto.MediaBytes, m => m.MapFrom<CustomMediaResolver>()); // TODO: USE THIS when updating media in Recipe
             CreateMap<AddRecipeCategoryDto, RecipeCategory>();
             CreateMap<Recipe, GetRecipeDto>()
                 .ForMember(dto => dto.Categories, r => r.MapFrom(r => r.RecipeCategories.Select(rc => rc.Category)));
-            CreateMap<PushRecipeDto, Recipe>();
-            // TODO: look into mapping both ways in one line
+            //CreateMap<PushRecipeDto, Recipe>();
             //CreateMap<Category, GetCategoryDto>();
             //CreateMap<RecipeBaseDto, Recipe>();
         }

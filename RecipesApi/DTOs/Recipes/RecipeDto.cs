@@ -1,4 +1,5 @@
 ﻿using RecipesApi.Models;
+using System;
 using System.Collections.Generic;
 
 namespace RecipesApi.DTOs.Recipes
@@ -10,14 +11,16 @@ namespace RecipesApi.DTOs.Recipes
     /// <summary>
     /// Recipe class with overriden properties to allow better flexibility
     /// </summary>
-    public class RecipeDto: Recipe, ICustomModel<RecipeDto>
-    {       
+    public class RecipeDto : Recipe, IEquatable<RecipeDto>
+    {
         public RecipeDto()
         {
             this.Medias = new List<MediaDto>();
+            this.Ingredients = new List<IngredientBase>();
         }
 
         public new IList<MediaDto> Medias { get; set; }
+        public new IList<IngredientBase> Ingredients { get; set; }  // TODO:
 
         public bool Equals(RecipeDto obj)
         {

@@ -10,21 +10,29 @@ using System.Linq;
 using System.Threading.Tasks;
 using RecipesApi.Utils;
 using RecipesApi.DTOs;
+using AutoMapper;
 
 namespace RecipesApi.Tests.Services
 {
     [TestFixture]
     public class RecipeServiceInstructionsTests
     {
-        private Mock<ILogger<RecipesService>> _logger;
+        private Mock<ILogger<RecipesService>> _loggerMock;
         private Mock<IMediaLogicHelper> _mediaHelper;
+        private IMapper _mapper;
 
         [SetUp]
         public void Setup()
         {
-            this._logger = new Mock<ILogger<RecipesService>>();
+            this._loggerMock = new Mock<ILogger<RecipesService>>();
             this._mediaHelper = new Mock<IMediaLogicHelper>();
             this._mediaHelper.Setup(h => h.LocateAndLoadMedias(It.IsAny<IEnumerable<Media>>())).Returns(new List<MediaDto>());
+
+            var mapperConfig = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile(new OrganizationProfile());
+            });
+            this._mapper = mapperConfig.CreateMapper();
         }
 
         #region Update Recipe instructions
@@ -45,7 +53,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredients to recipe
@@ -83,7 +91,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredient with ID that doesn't exist yet
@@ -122,7 +130,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove all instructions
@@ -157,17 +165,20 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove instruction with Id = 1
                     var instruction = recipeToUpdate.Instructions.FirstOrDefault(i => i.Id == 1);
                     recipeToUpdate.Instructions.Remove(instruction);
                     await service.UpdateOne(recipeToUpdate);
-
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var dbrecipe = await service.GetOne(4);
                     Assert.AreEqual(1, dbrecipe.Instructions.Count());
-                    instruction = dbrecipe.Instructions.FirstOrDefault();
+                    var instruction = dbrecipe.Instructions.FirstOrDefault();
                     Assert.AreEqual(2, instruction.Id);
                     Assert.AreEqual("Start cutting stuff", instruction.Description);
                     Assert.AreEqual(2, instruction.StepNum);
@@ -196,7 +207,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Update instruction with Id:1's Name and Unit
@@ -237,7 +248,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // modifying recipe properties
@@ -285,7 +296,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     // todo: is this bad practice? Should I just recreate an object Recipe here, with same Id? (Since we want to reproduce offline example). To avoid tracked/extra entities..
                     // get recipe with Id 4
                     var recipeToUpdate = await service.GetOne(4);

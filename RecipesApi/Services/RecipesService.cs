@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RecipesApi.DTOs;
@@ -26,13 +27,15 @@ namespace RecipesApi
         protected readonly IMediaLogicHelper MediaHelper;
         protected readonly DbSet<Recipe> Entities;
         protected readonly ILogger _logger;
+        protected readonly IMapper _mapper;
 
-        public RecipesService(RecipesContext context, ILogger<RecipesService> logger, IMediaLogicHelper mediaHelper)
+        public RecipesService(RecipesContext context, ILogger<RecipesService> logger, IMediaLogicHelper mediaHelper, IMapper mapper)
         {
             this.Context = context ?? throw new ArgumentNullException(nameof(context));
             this.MediaHelper = mediaHelper;
             this.Entities = this.Context.Set<Recipe>() ?? throw new ArgumentNullException(nameof(context));
             this._logger = logger;
+            this._mapper = mapper;
 
             try
             {
@@ -62,9 +65,15 @@ namespace RecipesApi
 
         public async Task<RecipeDto> GetOne(int id)
         {
-            var recipe = await this.Entities.Include(r => r.Medias).Include(r => r.RecipeCategories).ThenInclude(i => i.Category).Include(r => r.Instructions).Include(r => r.Ingredients).ThenInclude(i => i.Unit).SingleOrDefaultAsync(r => r.Id == id);
+            var recipe = await this.GetRecipeFromDb(id);
             var recipeDto = ConvertRecipeToDto(recipe);
             return recipeDto;
+        }
+
+        private async Task<Recipe> GetRecipeFromDb(int id)
+        {
+            var recipe = await this.Entities.Include(r => r.Medias).Include(r => r.RecipeCategories).ThenInclude(i => i.Category).Include(r => r.Instructions).Include(r => r.Ingredients).ThenInclude(i => i.Unit).AsNoTracking().SingleOrDefaultAsync(r => r.Id == id);
+            return recipe;
         }
 
         public async Task<ServiceResponse<RecipeDto>> AddOne(RecipeDto input)
@@ -73,11 +82,8 @@ namespace RecipesApi
             Recipe recipeToSave = null;
             try
             {
-                //this.prepareInputForCreateOrUpdate(input, true);             
-                // TODO: Handle media/image saving AND Convert to Recipe
                 recipeToSave = PrepareRecipeDtoForDatabase(input);
-                await this.Context.Set<Recipe>().AddAsync(recipeToSave); // NO
-                //this._context.Set<T>().Add(entityToUpdate);
+                await this.Entities.AddAsync(recipeToSave); // NO
                 var result = this.Context.SaveChanges();
                 _logger.LogInformation($"Entity succesfully saved to DB: Id:{recipeToSave.Id}");
                 // TODO: return created object in future
@@ -93,7 +99,6 @@ namespace RecipesApi
             catch (Exception e)
             {
                 this.Entities.Remove(recipeToSave);
-                //var errorMessage = $"Error while saving entity. Rolling back changes: Entity={input} ErrorType={e} ErrorMessage={e.InnerException?.Message}";
                 var errorMessage = $"Error while saving entity. Rolling back changes: ENTITYTYPE:[{input.GetType().Name}] ENTITY:[{input}] ERROR:[{e}]";
                 _logger.LogError(errorMessage);
                 response.Message = errorMessage;
@@ -103,26 +108,29 @@ namespace RecipesApi
             throw new NotImplementedException();
         }
 
-
-        public async Task<bool> UpdateOne(RecipeDto updatedRecipe)
+        /// <summary>
+        /// Update a single recipe
+        /// </summary>
+        /// <param name="updatedRecipeDto">The recipe with updates</param>
+        /// <returns></returns>
+        public async Task<bool> UpdateOne(RecipeDto updatedRecipeDto)
         {
             // TODO: AsNoTracking is no longer needed. We changed default behavior to NoTracking in RecipeContext
             //var dbRecipe = this.Entities.Include(r => r.Media).Include(r => r.Ingredients).AsNoTracking().FirstOrDefault(r => r.Id == recipe.Id); // TODO: make async
-            var dbRecipe = await this.GetOne(updatedRecipe.Id);
+            //var dbRecipe = await this.GetOne(updatedRecipe.Id);
+            var dbRecipe = await this.GetRecipeFromDb(updatedRecipeDto.Id);
+
+            //// Convert updated recipeDto to (DB)recipe, !!! only MEDIAS will be ommited as they need to be handled separately
+            var updatedRecipe = this.ConvertDtoToRecipe(updatedRecipeDto);
+       
 
             int result = 0;
             if (dbRecipe != null)
             {
-                //Disconnected scenario. Below not needed we'll already have a new context ?                 
-                // LAST UPDATE:
-                // - KO: audit date doesn't update on DB side
-
+                // Disconnected scenario                  
                 try
                 {
                     //this.Entities.Attach(recipe);           
-                    //// Handle all over updates
-                    //this.Entities.Update(recipe);
-
 
                     // Update Ingredients
                     ScanAndApplyChanges<Ingredient>(updatedRecipe.Ingredients, dbRecipe.Ingredients);
@@ -131,16 +139,47 @@ namespace RecipesApi
                     ScanAndApplyChanges<Instruction>(updatedRecipe.Instructions, dbRecipe.Instructions);
 
                     // Update Media
-                    // Get DB Medias that match recipe ID
-                    var existinMedias = this.Context.Set<Media>().Where(m => m.Recipe_Id == updatedRecipe.Id).ToList();
-                    //ScanMediaUpdates(updatedRecipe.Medias, dbRecipe.Medias);
-                    ScanForImageUpdates(updatedRecipe.Medias, existinMedias);
+                    // Get DB Medias that match recipe ID, we need medias not mediaDtos for Existing medias
+                    ScanForImageUpdates(updatedRecipeDto.Medias, dbRecipe.Medias);
 
                     // Update recipe itself
                     // TODO: (1) test with just update instead of below. (2) check if we shouldn't do below when updating related entities (rather than using update)
                     // TODO: !!! this always overrides Recipe props. Check if it's different first
-                    this.Context.Entry(dbRecipe).CurrentValues.SetValues(updatedRecipe);  // setting all values
+                    this.Context.Entry(dbRecipe).CurrentValues.SetValues(updatedRecipeDto);  // setting all values
                     this.Context.Entry(dbRecipe).State = EntityState.Modified;
+
+                    // UPDATE REGULAR PROPS: Go through each --matching-- properties between the 2 objects (media vs mediaDto)
+                    // Using reflection here to not have to update this code if we add more properties in the future (that are easy to handle)
+                    //var receivedRecipeProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0); // Removing Indexed Property (Item) to prevent circular get
+                    // TODO: Implement
+                    //foreach (var prop in receivedMediaProps)
+                    //{
+                    //    object mediaVal;
+                    //    try
+                    //    {
+                    //        mediaVal = media[prop.Name];
+                    //    }
+                    //    catch (NullReferenceException e)
+                    //    {
+                    //        // Expected. Property doesn't exist on Media. Skip check
+                    //        continue;
+                    //    }
+                    //    var mediaDtoVal = receivedMedia[prop.Name];
+                    //    // IF property existed on both objects, and value differ. Override dbMedia with updated value
+                    //    // Have to be repetitive here because we're using "objects" and can't use !=. But Equals won't work on nullref objects
+                    //    // If prop is null on one of the media/mediaDto but not both, update
+                    //    if ((mediaVal == null ^ mediaDtoVal == null))
+                    //    {
+                    //        media[prop.Name] = mediaDtoVal;
+                    //        this.Context.Entry(media).Property(prop.Name).IsModified = true;
+                    //    }
+                    //    else if (!(mediaVal == null && mediaDtoVal == null) && !mediaVal.Equals(mediaDtoVal))
+                    //    {
+                    //        media[prop.Name] = mediaDtoVal;
+                    //        this.Context.Entry(media).Property(prop.Name).IsModified = true;
+                    //    }
+                    //}
+
                     // TODO: finish below
                     //var receivedRecipeProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0); // Removing Indexed Property (Item) to prevent circular get
                     //foreach (var prop in receivedMediaProps)
@@ -163,9 +202,42 @@ namespace RecipesApi
             return false;
         }
 
-        public Task<bool> DeleteOne(int id)
+
+        /// <summary>
+        /// Delete single recipe by Id
+        /// </summary>
+        /// <param name="id">Recipe Id</param>
+        /// <returns>Status of action performed</returns>
+        public async Task<ServiceResponse> DeleteOne(int id)
         {
-            throw new NotImplementedException();
+            //TODO: verify if need GetOne here (if not, get rid of dbmediasToDelete)
+            //var dbRecipeDto = await this.GetOne(id);
+            var dbRecipe = await this.GetRecipeFromDb(id);
+            if (dbRecipe != null)
+            {
+                // DELETE Medias
+
+                // get dbMedias (with actual paths) from DB
+                //var recipeMediasId = dbRecipe.Medias.Select(m => m.Id);
+                //if (recipeDtoMediasId.Any())
+                //{
+                //var dbMediasToDelete = this.Context.Set<Media>().Where(m => recipeDtoMediasId.Contains(m.Id));
+                var deleteStatus = HandleDeletingMedia(dbRecipe.Medias);
+                if (deleteStatus.Success == false)
+                {
+                    // TODO: return full message on what happened
+                    return deleteStatus;
+                }
+                //}
+
+                // Turn RecipeDto to Recipe (with medias ignored since already handled separately) & delete with standard method
+                //var recipe = this.ConvertDtoToRecipe(dbRecipeDto);
+
+                // TODO: verify cascade delete works here             
+                this.Entities.Remove(dbRecipe);
+                return new ServiceResponse { Success = true };
+            }
+            return new ServiceResponse { Message = $"Recipe [ID:{id}] does not exist" };
         }
 
         /// <summary>
@@ -190,8 +262,6 @@ namespace RecipesApi
                         // clear Unid, recipeId and Id to be safe
                         ingredient.Id = 0;
                         ingredient.Recipe_Id = 0;
-                        ingredient.Unit = null;  // TODO: Unit should also not be part of it ?
-                        // TODO: there should be no Ingredient.Recipe
                     }
                 }
                 if (input.Medias != null)
@@ -223,11 +293,11 @@ namespace RecipesApi
                     throw new DuplicateNameException($"You provided a recipe with duplicate ingredients ID"); // TODO: pick up throw in nicer way 
                 }
 
-                // Clear unit object if it was provided so it doesn't create new one TODO: handle this with AutoMapper ? (if separate RecipeDto)
-                foreach (var ingredient in input.Ingredients)
-                {
-                    ingredient.Unit = null;
-                }
+                //// Clear unit object if it was provided so it doesn't create new one TODO: handle this with AutoMapper ? (if separate RecipeDto)
+                //foreach (var ingredient in input.Ingredients)
+                //{
+                //    ingredient.Unit = null;
+                //}
 
                 // Check for removed ingredients and delete them
                 var dbRecipeIngredients = new HashSet<int>(dbRecipe.Ingredients.Select(i => i.Id));
@@ -261,61 +331,106 @@ namespace RecipesApi
             }
         }
 
-        // TODO: do this with AutoMapper? -- I prefer having logic here though rather than in separate automapper dedicated logic class
-        private RecipeDto ConvertRecipeToDto(Recipe recipe)
+
+        #region Update Related Entities
+
+        /// <summary>
+        /// Scan received recipe's related entities/children for additions, removals and updates. And apply them
+        /// CANNOT BE USED WITH MEDIAS
+        /// </summary>
+        /// <typeparam name="TBase">The Base type for that model (aka: IngredientBase/InstructionBase) </typeparam>
+        /// <typeparam name="TEntity">The Context Entity type for that model  (aka: Ingredient/Instruction)</typeparam>
+        /// <param name="updatedRecipeItems">The list of related entities on Received/Updated recipe</param>
+        /// <param name="existingRecipeItems">The list of related entities on matching recipe in DB</param>
+        //private void ScanAndApplyChanges<TBase,TEntity>(IList<TBase> updatedRecipeItems, IList<TBase> existingRecipeItems) where TBase : class, ICustomModel<TEntity>, new()
+                                                                                                                           //where TEntity : class, new()
+
+        private void ScanAndApplyChanges<TEntity>(IList<TEntity> updatedRecipeItems, IList<TEntity> existingRecipeItems) where TEntity : class, ICustomModel<TEntity>, new()
         {
-            var recipeMedias = this.MediaHelper.LocateAndLoadMedias(recipe.Medias);
-            return new RecipeDto
+            if (!existingRecipeItems.Any() && !updatedRecipeItems.Any()) { return; }
+            var existingRecipeItemsIds = existingRecipeItems.Select(i => i.Id);  // items ids from DB recipe
+            var updatedRecipeItemsIds = updatedRecipeItems.Select(i => i.Id);      // items ids from updated recipe
+
+
+            // ADD ALL items if DB recipe doesn't have any yet and we receive some to add
+            if (!existingRecipeItemsIds.Any() && updatedRecipeItems.Any())
             {
-                Id = recipe.Id,
-                TitleShort = recipe.TitleShort,
-                TitleLong = recipe.TitleLong,
-                Description = recipe.Description,
-                OriginalLink = recipe.OriginalLink,
-                LastModifier = recipe.LastModifier,
-                AuditDate = recipe.AuditDate,
-                CreationDate = recipe.CreationDate,
-                Ingredients = recipe.Ingredients,
-                Instructions = recipe.Instructions,
-                RecipeCategories = recipe.RecipeCategories,
-                Medias = recipeMedias,
-            };
+                // reset Ids to ensure DB will apply its own
+                foreach (var item in updatedRecipeItems)
+                {
+                    item.Id = 0;
+                }
+                Context.AddRange(updatedRecipeItems);
+            }
+            else
+            {
+                var itemsIdsToDelete = existingRecipeItemsIds.Except(updatedRecipeItemsIds).ToList();  // get items Ids in existing recipe missing from updated recipe
+                var itemsIdsToAdd = updatedRecipeItemsIds.Except(existingRecipeItemsIds).ToList();  // get items Ids in updated recipe missing from existing recipe
+                var itemsIdsInCommon = existingRecipeItemsIds.Intersect(updatedRecipeItemsIds).ToList(); // get items IDs that are common to DB recipe and update. Freezing with toList()
+
+                // ADD items not present in DB recipe
+                // Looking for all additional items from what's in DB (rather than all with ID = 0), to cover cases where ID isn't 0 by mistake
+                if (itemsIdsToAdd.Count() > 0)
+                {
+                    var itemsToAdd = updatedRecipeItems.Where(i => itemsIdsToAdd.Contains(i.Id)).ToList();
+                    // reset Ids to ensure DB will apply its own
+                    itemsToAdd.ForEach(i => i.Id = 0);
+                    //foreach (var item in itemsToAdd)
+                    //{
+                    //    item.Id = 0;
+                    //}
+
+                    // Map Base type to Entity type.
+                    // TODO: waste of time if no base type...
+                    //var itemsToAddConverted = this._mapper.Map<IList<TBase>, IList<TEntity>>(itemsToAdd);
+                    this.Context.Set<TEntity>().AddRange(itemsToAdd);
+                }
+
+                // DELETE items no longer in updated recipe
+                if (itemsIdsToDelete.Count() > 0)
+                {
+                    // create new list of items with just Id and delete (rather than using item from DB Recipe that is tracked)
+                    //var itemsToDelete = existingRecipeItems.Where(i => itemsIdsToDelete.Contains(i.Id)).Select(i => new TEntity { Id = i.Id });
+                    // TODO: !!!! waste of time, we could directly convert to TEntity, but it doesn't have Id because doesn't implement ICustomModel
+                    var itemsToDelete = existingRecipeItems.Where(i => itemsIdsToDelete.Contains(i.Id)).Select(i => new TEntity { Id = i.Id });
+                    // Map Base type to Entity type.        
+                    //var itemsToDeleteConverted = this._mapper.Map<IEnumerable<TBase>, IEnumerable<TEntity>>(itemsToDelete);
+                    this.Context.Set<TEntity>().RemoveRange(itemsToDelete);
+                }
+
+                // UPDATE matching items (between Existing and Updated recipe) if difference in properties is registered                       
+                // and retrieve actual item from existing items
+                var itemsInCommon = existingRecipeItems.Where(i => itemsIdsInCommon.Contains(i.Id));
+
+                // Run through items on updated recipe and DB recipe, If they contain the same info skip. Otherwise update
+                foreach (var existingItem in itemsInCommon)
+                {
+                    // locate item with same ID in updated recipe
+                    var receivedItem = updatedRecipeItems.SingleOrDefault(i => i.Id == existingItem.Id);
+                    if (receivedItem != null && !existingItem.Equals(receivedItem))
+                    {
+                        // TODO: GOOD TO KNOW: here we can use a DTO that's not translated if needed in update, as long as updated object has same properties as existing
+                        //this.Context.Entry(existingIng).CurrentValues.SetValues(receivedIng);  // TODO: BUG values are not set to modified 
+                        // var x = this.Context.Entry(existingIng).State;
+                        //var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
+
+
+                        // Map Base type to Entity type.        
+                        //var receivedItemConverted = this._mapper.Map<TBase, TEntity>(receivedItem);
+      
+                        // We  entire object. It's easier for now
+                        this.Context.Set<TEntity>().Update(receivedItem); // TODO: go through each prop like in Media Update to only update prop necessary
+                    }
+                }
+
+            }
         }
 
         /// <summary>
-        /// Prepares a recipe DTO to be saved into DB, by saving Media separately and returning a recipe entity (with rest of related entities)
-        /// ready to be saved/
+        /// Scan received Recipe's MEDIAS for additions, removals and updates. And apply them
         /// </summary>
-        /// <param name="dto">The recipe received from front end</param>
-        /// <returns>The recipe to be saved into DB</returns>
-        private Recipe PrepareRecipeDtoForDatabase(RecipeDto dto)
-        {
-            // save media separately to DB / local storage
-            // TODO: do something with response. If anything bad happened?
-            var response = this.HandleSavingNewMediaDtos(dto.Medias);
-
-            // Resetting IDs of related entities to 0 in case they're not (to avoid unexpected conflicts/overriding)
-            dto.Ingredients.ToList().ForEach(i => i.Id = 0);
-            dto.Instructions.ToList().ForEach(i => i.Id = 0);
-            dto.RecipeCategories.ToList().ForEach(c => c.Id = 0);
-            // Convert recipe with rest of properties to save automatically in DB - Ignore medias
-            var recipe = new Recipe
-            {
-                Id = 0,
-                TitleShort = dto.TitleShort,
-                TitleLong = dto.TitleLong,
-                Description = dto.Description,
-                OriginalLink = dto.OriginalLink,
-                LastModifier = dto.LastModifier,
-                AuditDate = dto.AuditDate,
-                CreationDate = dto.CreationDate,
-                Ingredients = dto.Ingredients,
-                Instructions = dto.Instructions,
-                RecipeCategories = dto.RecipeCategories,
-            };
-            return recipe;
-        }
-
+        /// <param name="updatedRecipeMediasDtos">The list of medias (Dtos) on received recipe</param>
+        /// <param name="existingRecipeMedias">The list of medias on matching recipe in DB</param>
         private void ScanForImageUpdates(IEnumerable<MediaDto> updatedRecipeMediasDtos, IEnumerable<Media> existingRecipeMedias)
         {
             if (!updatedRecipeMediasDtos.Any() && !existingRecipeMedias.Any()) { return; }
@@ -352,24 +467,12 @@ namespace RecipesApi
                 {
                     // Get medias from DB (medias with actual paths) that need to be deleted
                     var dbMediasToDelete = existingRecipeMedias.Where(m => mediasIdsToDelete.Contains(m.Id));
-
-                    // Delete all medias at path
-                    foreach (var media in dbMediasToDelete)
-                    {
-                        if (File.Exists(media.MediaPath))
-                        {
-                            File.Delete(media.MediaPath);
-                            this._logger.LogInformation($"DELETED Media [ID:{media.Id}, PATH:{media.MediaPath}]");
-                            // TODO: Make sure file no longer exist?
-                        }
-                    }
-                    // Then delete medias
-                    this.Context.Set<Media>().RemoveRange(dbMediasToDelete);
+                    var deleteStatus = HandleDeletingMedia(dbMediasToDelete);
                 }
 
                 // UPDATE matching medias (between Existing and Updated recipe) if difference in properties is registered          
-                // Retrieve received Media(Dto) that match db Media (that has path)
-                var mediasToUpdate = existingRecipeMedias.Where(m => mediasIdsInCommon.Contains(m.Id));
+                // Retrieve received Media(Dto) that match db Media (that has path). Freezing result with toList()
+                var mediasToUpdate = existingRecipeMedias.Where(m => mediasIdsInCommon.Contains(m.Id)).ToList();
                 // Run through items on updated recipe and DB recipe, If they contain the same info skip. Otherwise update
                 foreach (var media in mediasToUpdate)
                 {
@@ -382,7 +485,7 @@ namespace RecipesApi
 
                         // UPDATE REGULAR PROPS: Go through each --matching-- properties between the 2 objects (media vs mediaDto)
                         // Using reflection here to not have to update this code if we add more properties in the future (that are easy to handle)
-                        var receivedMediaProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0); // Removing Indexed Property (Item) to prevent circular get
+                        var receivedMediaProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
                         foreach (var prop in receivedMediaProps)
                         {
                             object mediaVal;
@@ -417,11 +520,12 @@ namespace RecipesApi
                         // STEP 2 - Compare bytes from received media and saved media
                         if (!mediaDto.MediaBytes.SequenceEqual(receivedMedia.MediaBytes))
                         {
+                            // TODO: LOG
                             // I prefer to delete media entirely and save new one, in case Media path changed at application level (so override will not work and new image would be saved in new location without proper cleanup)
                             // Delete media from storage
                             File.Delete(media.MediaPath);
                             ServiceResponse savingResult; // TODO: do something with the response
-                                                                 // Save new media (will use same path)
+                                                          // Save new media (will use same path)
                             var mediasWithUpdatedImagePath = MediaHelper.SaveImagesLocally(new List<MediaDto> { receivedMedia }, out savingResult);
                             var mediaWithUpdatedImagePath = mediasWithUpdatedImagePath.SingleOrDefault();
 
@@ -433,6 +537,7 @@ namespace RecipesApi
                             }
 
                         }
+                
                         //// STEP 3 - Attach media for tracking (automatically identify updated properties)
                         //this.Context.Set<Media>().Attach(media); // Now updates done to it will be registed by Context and saved on SaveChanges()
                         //this.Context.Entity(media).State = En
@@ -447,10 +552,44 @@ namespace RecipesApi
 
             }
         }
+        #endregion
+
+        #region Helper methods
+        private ServiceResponse HandleDeletingMedia(IEnumerable<Media> mediasToDelete)
+        {
+            if (mediasToDelete == null || !mediasToDelete.Any()) { return new ServiceResponse { Success = true, Message = "No Media to Delete" }; }
+            this._logger.LogInformation($"About to DELETE {mediasToDelete.Count()} medias for Recipe [Id:{mediasToDelete.First().Id}]");
+            // Delete all medias at path
+            var deleteStatus = new ServiceResponse { Success = true };
+            foreach (var media in mediasToDelete)
+            {
+                if (File.Exists(media.MediaPath))
+                {
+                    try
+                    {
+                        File.Delete(media.MediaPath);
+                        this._logger.LogInformation($"DELETED Media on local storage [ID:{media.Id}, PATH:{media.MediaPath}]");
+                    }
+                    catch (Exception e)
+                    {
+                        var msg = $"Something happened when trying to DELETE Media on local storage [ID:{media.Id}, PATH:{media.MediaPath}]";
+                        this._logger.LogError(msg + ", Error:", e);
+                        deleteStatus.Success = false;
+                        // I decide to return by default and prevent further deletion. Behavior to rethink in future
+                        deleteStatus.Message = deleteStatus.Message == null ? msg : deleteStatus.Message.Concat(msg).ToString();
+                        return deleteStatus;
+                    }
+                    // TODO: Make sure file no longer exist?
+                }
+            }
+            // Then delete medias
+            this.Context.Set<Media>().RemoveRange(mediasToDelete);
+            return deleteStatus;
+        }
 
         private ServiceResponse HandleSavingNewMediaDtos(IEnumerable<MediaDto> mediasToSave)
         {
-            if (mediasToSave==null || !mediasToSave.Any()) { return new ServiceResponse { Success = true, Message = "No Media to Save" }; }
+            if (mediasToSave == null || !mediasToSave.Any()) { return new ServiceResponse { Success = true, Message = "No Media to Save" }; }
             // Keep a reference of MediaDto and its affiliated Media to save the path to the correct Media instance after IDs have been assigned by DB to Media
             // (since there is no other way to keep track until then: without IDs multiple mediaDto/media could have no way of distinguishing them)
             // The pair will be saved to an array of length 2 with [0] = MediaDto and [1] = Media
@@ -491,79 +630,89 @@ namespace RecipesApi
         }
 
         /// <summary>
-        /// Scan all of the received/update recipe related entities/children and check for additions, removals and updates. And apply them
-        /// CANNOT BE USED WITH MEDIAS
+        /// Convert Recipe (DB) to Recipe DTO
+        /// Retrieves Media from storage and converst them to bytes for DTO
         /// </summary>
-        /// <typeparam name="TEntity">Recipe's related entities (aka: Ingredients/Instructions/Media) </typeparam>
-        /// <param name="updatedRecipeItems">The list of related entities on Received/Updated recipe</param>
-        /// <param name="existingRecipeItems">The list of related entities on existing/DB recipe</param>
-        private void ScanAndApplyChanges<TEntity>(IList<TEntity> updatedRecipeItems, IList<TEntity> existingRecipeItems) where TEntity : class, ICustomModel<TEntity>, new()
+        /// <param name="recipe">DB Recipe</param>
+        /// <returns>Recipe DTO</returns>
+        // TODO: do this with AutoMapper? -- I prefer having logic here though rather than in separate automapper dedicated logic class
+        private RecipeDto ConvertRecipeToDto(Recipe recipe)
         {
-            if (!existingRecipeItems.Any() && !updatedRecipeItems.Any()) { return; }
-            var existingRecipeItemsIds = existingRecipeItems.Select(i => i.Id);  // items ids from DB recipe
-            var updatedRecipeItemsIds = updatedRecipeItems.Select(i => i.Id);      // items ids from updated recipe
-
-
-            // ADD ALL items if DB recipe doesn't have any yet and we receive some to add
-            if (!existingRecipeItemsIds.Any() && updatedRecipeItems.Any())
+            var recipeMedias = this.MediaHelper.LocateAndLoadMedias(recipe.Medias);
+            return new RecipeDto
             {
-                // reset Ids to ensure DB will apply its own
-                foreach (var item in updatedRecipeItems)
-                {
-                    item.Id = 0;
-                }
-                Context.AddRange(updatedRecipeItems);
-            }
-            else
-            {
-                var itemsIdsToDelete = existingRecipeItemsIds.Except(updatedRecipeItemsIds).ToList();  // get items Ids in existing recipe missing from updated recipe
-                var itemsIdsToAdd = updatedRecipeItemsIds.Except(existingRecipeItemsIds).ToList();  // get items Ids in updated recipe missing from existing recipe
-                var itemsIdsInCommon = existingRecipeItemsIds.Intersect(updatedRecipeItemsIds).ToList(); // get items IDs that are common to DB recipe and update. Freezing with toList()
-
-                // ADD items not present in DB recipe
-                // Looking for all additional items from what's in DB (rather than all with ID = 0), to cover cases where ID isn't 0 by mistake
-                if (itemsIdsToAdd.Count() > 0)
-                {
-                    var itemsToAdd = updatedRecipeItems.Where(i => itemsIdsToAdd.Contains(i.Id)).ToList();
-                    // reset Ids to ensure DB will apply its own
-                    foreach (var item in itemsToAdd)
-                    {
-                        item.Id = 0;
-                    }
-                    this.Context.Set<TEntity>().AddRange(itemsToAdd);
-                }
-
-                // DELETE items no longer in updated recipe
-                if (itemsIdsToDelete.Count() > 0)
-                {
-                    // create new list of items with just Id and delete (rather than using item from DB Recipe that is tracked)
-                    var itemsToDelete = existingRecipeItems.Where(i => itemsIdsToDelete.Contains(i.Id)).Select(i => new TEntity { Id = i.Id });
-                    this.Context.Set<TEntity>().RemoveRange(itemsToDelete);
-                }
-
-                // UPDATE matching items (between Existing and Updated recipe) if difference in properties is registered                       
-                // and retrieve actual item from existing items
-                var itemsInCommon = existingRecipeItems.Where(i => itemsIdsInCommon.Contains(i.Id));
-
-                // Run through items on updated recipe and DB recipe, If they contain the same info skip. Otherwise update
-                foreach (var existingItem in itemsInCommon)
-                {
-                    // locate item with same ID in updated recipe
-                    var receivedItem = updatedRecipeItems.SingleOrDefault(i => i.Id == existingItem.Id);
-                    if (receivedItem != null && !existingItem.Equals(receivedItem))
-                    {
-                        // TODO: GOOD TO KNOW: here we can use a DTO that's not translated if needed in update, as long as updated object has same properties as existing
-                        //this.Context.Entry(existingIng).CurrentValues.SetValues(receivedIng);  // TODO: BUG values are not set to modified 
-                        // var x = this.Context.Entry(existingIng).State;
-                        //var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
-
-                        // We  entire object. It's easier for now
-                        this.Context.Set<TEntity>().Update(receivedItem); // TODO: go through each prop like in Media Update to only update prop necessary
-                    }
-                }
-
-            }
+                Id = recipe.Id,
+                TitleShort = recipe.TitleShort,
+                TitleLong = recipe.TitleLong,
+                Description = recipe.Description,
+                OriginalLink = recipe.OriginalLink,
+                LastModifier = recipe.LastModifier,
+                AuditDate = recipe.AuditDate,
+                CreationDate = recipe.CreationDate,
+                Ingredients = this._mapper.Map<IList<Ingredient>, IList<IngredientBase>>(recipe.Ingredients),
+                Instructions = recipe.Instructions,
+                RecipeCategories = recipe.RecipeCategories,
+                Medias = recipeMedias,
+            };
         }
+
+        private Recipe ConvertDtoToRecipe(RecipeDto dto)
+        {
+            // Medias remain null in this case because they will usually be handled separately
+            // TODO: BUT Consider adding Medias here?
+            var recipe = new Recipe
+            {
+                Id = dto.Id,
+                TitleShort = dto.TitleShort,
+                TitleLong = dto.TitleLong,
+                Description = dto.Description,
+                OriginalLink = dto.OriginalLink,
+                LastModifier = dto.LastModifier,
+                AuditDate = dto.AuditDate,
+                CreationDate = dto.CreationDate,
+                Ingredients = this._mapper.Map<IList<IngredientBase>, IList<Ingredient>>(dto.Ingredients),
+                Instructions = dto.Instructions,
+                RecipeCategories = dto.RecipeCategories,
+                Medias = null
+            };
+            return recipe;
+        }
+
+        /// <summary>
+        /// Prepares a recipe DTO to be saved into DB, by saving Media separately and returning a recipe entity (with rest of related entities)
+        /// ready to be saved/
+        /// </summary>
+        /// <param name="dto">The recipe received from front end</param>
+        /// <returns>The recipe to be saved into DB</returns>
+        private Recipe PrepareRecipeDtoForDatabase(RecipeDto dto)
+        {
+            // save media separately to DB / local storage
+            // TODO: do something with response. If anything bad happened?
+            var response = this.HandleSavingNewMediaDtos(dto.Medias);
+
+            // Resetting IDs of related entities to 0 in case they're not (to avoid unexpected conflicts/overriding)
+            dto.Ingredients.ToList().ForEach(i => i.Id = 0);
+            dto.Instructions.ToList().ForEach(i => i.Id = 0);
+            dto.RecipeCategories.ToList().ForEach(c => c.Id = 0);
+            // Convert recipe with rest of properties to save automatically in DB - Ignore medias
+            var recipe = new Recipe
+            {
+                Id = 0,
+                TitleShort = dto.TitleShort,
+                TitleLong = dto.TitleLong,
+                Description = dto.Description,
+                OriginalLink = dto.OriginalLink,
+                LastModifier = dto.LastModifier,
+                AuditDate = dto.AuditDate,
+                CreationDate = dto.CreationDate,
+                Ingredients = this._mapper.Map<IList<IngredientBase>, IList<Ingredient>>(dto.Ingredients),
+                Instructions = dto.Instructions,
+                RecipeCategories = dto.RecipeCategories,
+            };
+            return recipe;
+        }
+
+        #endregion
 
         public void Dispose()
         {

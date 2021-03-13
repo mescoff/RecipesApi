@@ -1,9 +1,6 @@
-﻿using RecipesApi.DTOs.Ingredients;
-using RecipesApi.Models;
+﻿using RecipesApi.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace RecipesApi.DTOs.Recipes
 {
@@ -18,7 +15,7 @@ namespace RecipesApi.DTOs.Recipes
         public string LastModifier { get; set; } // TODO: remove
         public DateTime? AuditDate { get; set; } // TODO: remove
         public DateTime? CreationDate { get; set; } // TODO: remove
-        public IEnumerable<PushIngredientDto> Ingredients { get; set; }
+        public IEnumerable<IngredientBase> Ingredients { get; set; }
         public IEnumerable<MediaDto> Media { get; set; }
         public IEnumerable<Instruction> Instructions { get; set; }
         public IEnumerable<Category> Categories { get; set; }

@@ -1,22 +1,12 @@
-﻿
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
-    [Table("recipe_ingredients")]
-    public class Ingredient: ICustomModel<Ingredient> // IngredientBase //, ICustomModel<Ingredient> // TODO: Move IEquatable to ICustomModel
+    public class IngredientBase : ICustomModel<IngredientBase> //, IEquatable<IngredientBase>  // IEquatable<T> where T : class
     {
-        //[Key]
-        //[Column("RecipeIng_Id")]
-        //[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        //public new int Id { get; set; }
-
-        [Key]
-        [Column("RecipeIng_Id")]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
         [Required]
@@ -37,14 +27,7 @@ namespace RecipesApi.Models
             return JsonSerializer.Serialize(this);
         }
 
-        [ForeignKey("Recipe_Id")]
-        [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
-        public Recipe Recipe {get; set;}
-
-        [ForeignKey("Unit_Id")]
-        public Unit Unit { get; set; }
-
-        public bool Equals(Ingredient obj)
+        public bool Equals(IngredientBase obj)
         {
             return (
                 this.Id == obj.Id &&
@@ -55,5 +38,9 @@ namespace RecipesApi.Models
             );
         }
 
+        public override int GetHashCode()
+        {
+            return this.Name.GetHashCode() * this.Id;
+        }
     }
 }

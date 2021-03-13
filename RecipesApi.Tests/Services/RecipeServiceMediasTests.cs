@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.Sqlite;
+﻿using AutoMapper;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,7 @@ namespace RecipesApi.Tests.Services
         private Mock<ILogger<RecipesService>> _loggerMock;
         private Mock<IConfiguration> _configuration;
         private IMediaLogicHelper _mediaHelper;
+        private IMapper _mapper;
         private List<Media> _contextMedia;  // keep track of Media list used in context created by test (override in each test)
         private string _savedMediasPath;
         private string _mediasPath; // path where to load image byte for testing purposes (act like received img)
@@ -39,6 +41,12 @@ namespace RecipesApi.Tests.Services
             this._loggerMock = new Mock<ILogger<RecipesService>>();
             var workingDirectory = Environment.CurrentDirectory;
             this._mediasPath = Path.Combine(workingDirectory, "TestData");
+
+            var mapperConfig = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile(new OrganizationProfile());
+            });
+            this._mapper = mapperConfig.CreateMapper();
 
             this._configuration = new Mock<IConfiguration>();
             this._configuration.SetupGet(c => c["MediasSettings:BasePath"]).Returns(this._mediasPath);
@@ -71,7 +79,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID setup for this test suite
                     var recipeToUpdate = await service.GetOne(recipeId);
 
@@ -85,7 +93,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
 
                     // Get recipe again from DB with new medias
                     var recipeToUpdate = await service.GetOne(recipeId);
@@ -129,7 +137,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID 4
                     var recipeToUpdate = await service.GetOne(recipeId);
 
@@ -145,7 +153,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     var recipeUpdated = await service.GetOne(recipeId);
                     var image = recipeUpdated.Medias.Where(m => m.Id == 1).First();
                     Assert.AreEqual("OrangeJuice", image.Title);
@@ -177,7 +185,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID 4
                     var recipeToUpdate = await service.GetOne(recipeId);
 
@@ -196,7 +204,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     var recipeUpdated = await service.GetOne(recipeId);
                     var image = recipeUpdated.Medias.Where(m => m.Id == 3).First();
                     Assert.AreEqual("FoodMarket", image.Title);
@@ -235,7 +243,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID defined at class level
                     // TODO: we're doing all of this wrong... You need a moqed environment for all test to work properly... The mediaLogicHelperTest already handles testing physical loading
 
@@ -250,7 +258,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     var recipeUpdated = await service.GetOne(recipeId);
                     var image = recipeUpdated.Medias.Where(m => m.Id == 3).FirstOrDefault();
                     Assert.IsNull(image);
@@ -290,7 +298,7 @@ namespace RecipesApi.Tests.Services
                 SetupBasicContext(options, false, recipeId, "RecipeUpdate_DeletingMultipleImages");
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID defined at class level
                     var recipeToUpdate = await service.GetOne(recipeId);
 
@@ -302,7 +310,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     var recipeUpdated = await service.GetOne(recipeId);
                     Assert.IsEmpty(recipeUpdated.Medias);
                     // Verify logger wrote INFO specifying that Images were deleted, for all 3 images
@@ -341,7 +349,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID defined at class level
                     var recipeToUpdate = await service.GetOne(recipeId);
 
@@ -355,7 +363,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     var recipeUpdated = await service.GetOne(recipeId);
                     Assert.AreEqual(4, recipeUpdated.Medias.Count);
 
@@ -394,7 +402,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     // get recipe with ID defined at class level
                     var recipeToUpdate = await service.GetOne(recipeId);
 
@@ -409,7 +417,7 @@ namespace RecipesApi.Tests.Services
                 using (var context = new RecipesContext(options))
                 {
                     // VERIFY
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper, this._mapper);
                     var recipeUpdated = await service.GetOne(recipeId);
                     Assert.AreEqual(5, recipeUpdated.Medias.Count, "Medias count should be 5");
 
