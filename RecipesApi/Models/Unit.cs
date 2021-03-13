@@ -1,11 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
 namespace RecipesApi.Models
 {
     [Table("units")]
-    public class Unit : ICustomModel<Unit>
+    public class Unit : ICustomModel<Unit> //, IEquatable<Unit>
     {
         [Key]
         [Column("Unit_Id")]

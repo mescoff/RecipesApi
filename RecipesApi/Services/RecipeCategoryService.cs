@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using RecipesApi.DTOs.Recipes;
 using RecipesApi.Models;
 using RecipesApi.Utils;
 using System;

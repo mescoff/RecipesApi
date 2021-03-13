@@ -17,14 +17,14 @@ namespace RecipesApi.Controllers
     //[ValidateModel]
     public class RecipesController : ControllerBase
     {
-        private readonly IEntityService<Recipe> _recipesService;
+        private readonly IRecipesService<RecipeDto> _recipesService;
         private readonly IMapper _mapper;
 
         /// <summary>
         /// Recipes Controller constructor
         /// </summary>
         /// <param name="recipeService"></param>
-        public RecipesController(IEntityService<Recipe> recipeService, IMapper mapper)
+        public RecipesController(IRecipesService<RecipeDto> recipeService, IMapper mapper)
         {
             this._recipesService = recipeService;
             this._mapper = mapper;
@@ -103,7 +103,7 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         //[ValidateAntiForgeryToken]
-        public async Task<ActionResult> Post([FromBody] Recipe input)
+        public async Task<ActionResult> Post([FromBody] RecipeDto input)
         {
             //var recipe = this._mapper.Map<RecipeBaseDto, Recipe>(input);
             var response = await this._recipesService.AddOne(input);
@@ -128,21 +128,21 @@ namespace RecipesApi.Controllers
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
       
-        public async Task<ActionResult> Put([FromBody] PushRecipeDto input)
+        public async Task<ActionResult> Put([FromBody] RecipeDto recipe)
         {
          
 
-            var recipe = this._mapper.Map<PushRecipeDto, Recipe>(input);
+            //var recipe = this._mapper.Map<PushRecipeDto, Recipe>(input);
             // validate model after transformed into Recipe and send specific response
-            if (!TryValidateModel(recipe, nameof(Recipe)))
-            {
-                var state = ModelState;
-                return new BadRequestObjectResult(ModelState);           
-            }
+            //if (!TryValidateModel(recipe, nameof(Recipe)))
+            //{
+            //    var state = ModelState;
+            //    return new BadRequestObjectResult(ModelState);           
+            //}
             var isSuccess = await this._recipesService.UpdateOne(recipe);
             if (!isSuccess)
             {
-                return UnprocessableEntity(input);
+                return UnprocessableEntity(recipe);
             }
             return Ok();
         }
@@ -152,19 +152,25 @@ namespace RecipesApi.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        /// <response code="200">Recipe was deleted</response>
-        /// <response code="422">Input cannot be processed</response>
-        //// DELETE: api/ApiWithActions/5
+        /// <response code="200">OK : Recipe was deleted</response>
+        /// <response code="404">NOT FOUND: Recipe not found</response>
+        /// <response code="500">Internal Server Error: Something happened on server side when deleting recipe</response>
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult> Delete(int id)
         {
-            var isSuccess = await this._recipesService.DeleteOne(id);
-            if (!isSuccess)
+            var deleteStatus = await this._recipesService.DeleteOne(id);
+            if (deleteStatus.Success == false)
             {
-                // TODO: this should return diff error depending on if couldn't remove or couldn't find
-                return UnprocessableEntity($"Deletion cannot be processed for Recipe with ID {id}. Recipe might not exist");
+                if (deleteStatus.Message.Contains("not exist")){
+                    return NotFound(deleteStatus.Message);
+                }
+                else
+                {
+                    return StatusCode(500, deleteStatus.Message);
+                }
             }
             return Ok();
         }

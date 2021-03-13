@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
@@ -7,7 +8,7 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("categories")]
-    public class Category : ICustomModel<Category>
+    public class Category : ICustomModel<Category> //, IEquatable<Category>
     {
 
         public Category()

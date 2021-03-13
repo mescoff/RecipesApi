@@ -19,6 +19,7 @@ namespace RecipesApi.Models
         /// Time Unit (should be Hours, Minutes or Seconds)
         /// </summary>
         [Required]
+        // TODO: Add regex here to force user to send "s|seconds|hours|h|minutes|m"
         public string TimeUnit { get; set; }
 
         [Required]

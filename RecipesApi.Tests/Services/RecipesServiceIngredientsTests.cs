@@ -10,21 +10,28 @@ using System.Linq;
 using System.Threading.Tasks;
 using RecipesApi.Utils;
 using RecipesApi.DTOs;
+using AutoMapper;
 
 namespace RecipesApi.Tests.Services
 {
     [TestFixture]
     public class RecipeServiceIngredientsTests
     {
-        private Mock<ILogger<RecipesService>> _logger;
+        private Mock<ILogger<RecipesService>> _loggerMock;
         private Mock<IMediaLogicHelper> _mediaHelper;
+        private IMapper _mapper;
 
         [SetUp]
         public void Setup()
         {
-            this._logger = new Mock<ILogger<RecipesService>>();
+            this._loggerMock = new Mock<ILogger<RecipesService>>();
             this._mediaHelper = new Mock<IMediaLogicHelper>();
             this._mediaHelper.Setup(h => h.LocateAndLoadMedias(It.IsAny<IEnumerable<Media>>())).Returns(new List<MediaDto>());
+            var mapperConfig = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile(new OrganizationProfile());
+            });
+            this._mapper = mapperConfig.CreateMapper();
         }
 
         #region Update Recipe ingredients 
@@ -45,12 +52,12 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredients to recipe
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 0, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 0, Name = "Flour", Quantity = 3, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
+                    recipeToUpdate.Ingredients.Add(new IngredientBase { Id = 0, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
+                    recipeToUpdate.Ingredients.Add(new IngredientBase { Id = 0, Name = "Flour", Quantity = 3, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
                     await service.UpdateOne(recipeToUpdate);
 
                     var dbrecipe = await service.GetOne(4);
@@ -85,11 +92,11 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Add Ingredients to recipe
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = 84, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
+                    recipeToUpdate.Ingredients.Add(new IngredientBase { Id = 84, Name = "Butter", Quantity = 2, Unit_Id = 3, Recipe_Id = recipeToUpdate.Id });
                     await service.UpdateOne(recipeToUpdate);
 
                     var dbrecipe = await service.GetOne(4);
@@ -124,11 +131,11 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove all ingredients
-                    recipeToUpdate.Ingredients = new List<Ingredient>();
+                    recipeToUpdate.Ingredients = new List<IngredientBase>();
                     await service.UpdateOne(recipeToUpdate);
 
                     var dbrecipe = await service.GetOne(4);
@@ -159,7 +166,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Remove ingredient with Id = 1
@@ -197,14 +204,14 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // Update ingredient with Id:1's Name and Unit
                     var ingredient = recipeToUpdate.Ingredients.FirstOrDefault(i => i.Id == 1);
                     // overriding ingredient to remove linked/tracked objects, and modifying some properties
                     recipeToUpdate.Ingredients.Remove(ingredient);
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = ingredient.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient.Recipe_Id });
+                    recipeToUpdate.Ingredients.Add(new IngredientBase { Id = ingredient.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient.Recipe_Id });
 
                     await service.UpdateOne(recipeToUpdate);
 
@@ -239,7 +246,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeToUpdate = await service.GetOne(4);
 
                     // modifying recipe properties
@@ -250,7 +257,7 @@ namespace RecipesApi.Tests.Services
                     var ingredient = recipeToUpdate.Ingredients.FirstOrDefault(i => i.Id == 1);
                     // overriding ingredient to remove linked/tracked objects, and modifying some properties
                     recipeToUpdate.Ingredients.Remove(ingredient);
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = ingredient.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient.Recipe_Id });
+                    recipeToUpdate.Ingredients.Add(new IngredientBase { Id = ingredient.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient.Recipe_Id });
 
                     await service.UpdateOne(recipeToUpdate);
 
@@ -288,7 +295,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     // todo: is this bad practice? Should I just recreate an object Recipe here, with same Id? (Since we want to reproduce offline example). To avoid tracked/extra entities..
                     // get recipe with Id 4
                     var recipeToUpdate = await service.GetOne(4);
@@ -300,10 +307,10 @@ namespace RecipesApi.Tests.Services
                     // Modify ingredient with Id 2
                     var ingredient2 = recipeToUpdate.Ingredients.FirstOrDefault(i => i.Id == 2);
                     recipeToUpdate.Ingredients.Remove(ingredient2);
-                    recipeToUpdate.Ingredients.Add(new Ingredient { Id = ingredient2.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient2.Recipe_Id });
+                    recipeToUpdate.Ingredients.Add(new IngredientBase { Id = ingredient2.Id, Name = "Strawberry", Quantity = 1, Unit_Id = 3, Recipe_Id = ingredient2.Recipe_Id });
 
                     // Add new ingredient
-                    var ingredient3 = new Ingredient() { Id = 0, Name = "Flour", Quantity = 3, Unit_Id = 1, Recipe_Id = 4 };
+                    var ingredient3 = new IngredientBase() { Id = 0, Name = "Flour", Quantity = 3, Unit_Id = 1, Recipe_Id = 4 };
                     recipeToUpdate.Ingredients.Add(ingredient3);
 
                     // Get recipe again from db and verify all changes worked

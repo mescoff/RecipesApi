@@ -11,21 +11,28 @@ using RecipesApi.DTOs.Recipes;
 using System.Collections.Generic;
 using RecipesApi.DTOs;
 using System.Text.RegularExpressions;
+using AutoMapper;
 
 namespace RecipesApi.Tests.Services
 {
     [TestFixture]
     public class RecipeServiceRecipeTests
     {
-        private Mock<ILogger<RecipesService>> _logger;
+        private Mock<ILogger<RecipesService>> _loggerMock;
         private Mock<IMediaLogicHelper> _mediaHelper;
+        private IMapper _mapper;
 
         [SetUp]
         public void Setup()
         {
-            this._logger = new Mock<ILogger<RecipesService>>();
+            this._loggerMock = new Mock<ILogger<RecipesService>>();
             this._mediaHelper = new Mock<IMediaLogicHelper>();
             this._mediaHelper.Setup(h => h.LocateAndLoadMedias(It.IsAny<IEnumerable<Media>>())).Returns(new List<MediaDto>());
+            var mapperConfig = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile(new OrganizationProfile());
+            });
+            this._mapper = mapperConfig.CreateMapper();
         }
 
         #region Add
@@ -47,7 +54,7 @@ namespace RecipesApi.Tests.Services
                 int createdRecipeId = -1;
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var newRecipe = new RecipeDto
                     {
                         Description = "Something",
@@ -66,7 +73,7 @@ namespace RecipesApi.Tests.Services
                 }
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipe = await service.GetOne(createdRecipeId);
 
                     Assert.AreEqual("Something", recipe.Description);
@@ -98,7 +105,7 @@ namespace RecipesApi.Tests.Services
                 SetupBasicContext(options); // TODO: move into setup?
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var newRecipe = new RecipeDto { Description = "Something", LastModifier = "xx", TitleShort = null };
                     // 
                     //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
@@ -135,7 +142,7 @@ namespace RecipesApi.Tests.Services
                 SetupBasicContext(options); // TODO: move into setup?
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var rdm = new Random();
                     var shortTitle = rdm.GenerateRandomString(52);
                     var length = shortTitle.Length;
@@ -177,7 +184,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeUpdate = await service.GetOne(4);
 
                     // modifying recipe properties
@@ -189,7 +196,7 @@ namespace RecipesApi.Tests.Services
                 }
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     // get recipe again
                     var newRecipe = await service.GetOne(4);
                     Assert.AreEqual("Banana pancakes", newRecipe.TitleShort);
@@ -220,7 +227,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeUpdate = await service.GetOne(4);
 
                     var currentTime = DateTime.Now;
@@ -230,7 +237,7 @@ namespace RecipesApi.Tests.Services
                 }
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     // get recipe again in new "request" / separate context
                     var newRecipe = await service.GetOne(4);
                     Assert.AreEqual(null, newRecipe.AuditDate); // should be unchanged, aka: should be null since it can only be generated by DB
@@ -260,7 +267,7 @@ namespace RecipesApi.Tests.Services
 
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     var recipeUpdate = await service.GetOne(4);
 
                     var currentTime = DateTime.Now;
@@ -270,7 +277,7 @@ namespace RecipesApi.Tests.Services
                 }
                 using (var context = new RecipesContext(options))
                 {
-                    var service = new RecipesService(context, this._logger.Object, this._mediaHelper.Object);
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
                     // get recipe again in new "request" / separate context
                     var newRecipe = await service.GetOne(4);
                     Assert.AreEqual(null, newRecipe.CreationDate); // should be unchanged, aka: should be null since it can only be generated by DB

@@ -8,6 +8,7 @@ namespace RecipesApi.Services
 {
     public class IngredientsService: EntityService<Ingredient>
     {
+        //TODO: Ingredient Service might not be functional with IngredientBase. Fix it
         public IngredientsService(RecipesContext context, ILogger<IngredientsService> logger) : base(context, logger)
         {
         }

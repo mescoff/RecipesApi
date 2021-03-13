@@ -13,6 +13,6 @@ namespace RecipesApi
         Task<RecipeDto> GetOne(int id);
         Task<bool> UpdateOne(RecipeDto updatedRecipe);
         Task<ServiceResponse<RecipeDto>> AddOne(RecipeDto input);
-        Task<bool> DeleteOne(int id);
+        Task<ServiceResponse> DeleteOne(int id);
     }
 }

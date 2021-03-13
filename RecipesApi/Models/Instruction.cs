@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -6,7 +7,7 @@ using System.Text.Json.Serialization;
 namespace RecipesApi.Models
 {
     [Table("recipe_instructions")]
-    public class Instruction : ICustomModel<Instruction>
+    public class Instruction : ICustomModel<Instruction> //, IEquatable<Instruction>
     {
         [Key]
         [Column("RecipeInst_Id")]
@@ -33,7 +34,7 @@ namespace RecipesApi.Models
         public int? RecipeMedia_Id { get; set; }
 
         [ForeignKey("RecipeMedia_Id")]
-        public Media Media { get; set; }
+        public Media Media { get; set; } // TODO: This is probably broken
 
         public bool Equals(Instruction obj)
         {

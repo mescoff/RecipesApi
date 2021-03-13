@@ -47,7 +47,7 @@ namespace RecipesApi
             });
             services.AddAutoMapper(typeof(Startup));
             services.AddControllers();
-         
+
             // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
             // Using Pomelo instead which support NetCore 3+
             // Lazy loading DBSets only when needed
@@ -61,15 +61,14 @@ namespace RecipesApi
                 );
             services.AddScoped<IMediaLogicHelper, MediaLogicHelper>();
 
-            services.AddScoped<IRecipesService<RecipeDto>,RecipesService>();
-
-            services.AddScoped<IEntityService<Category>,CategoryService>();
+            services.AddScoped<IRecipesService<RecipeDto>, RecipesService>();
+            services.AddScoped<IEntityService<Category>, CategoryService>();
             services.AddScoped<IEntityService<RecipeCategory>, RecipeCategoryService>();
-            services.AddScoped<IEntityService<Ingredient>,IngredientsService>();
-            services.AddScoped<IEntityService<Unit>,UnitsService>();
+            services.AddScoped<IEntityService<Ingredient>, IngredientsService>();
+            services.AddScoped<IEntityService<Unit>, UnitsService>();
             //services.AddScoped<IEntityService<Media>,MediaService>();
-            services.AddScoped<IEntityService<Instruction>,InstructionsService>();
-            services.AddScoped<IEntityService<TimeInterval>,TimeIntervalsService>();
+            services.AddScoped<IEntityService<Instruction>, InstructionsService>();
+            services.AddScoped<IEntityService<TimeInterval>, TimeIntervalsService>();
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>
             {
