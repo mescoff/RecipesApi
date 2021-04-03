@@ -46,10 +46,10 @@ namespace RecipesApi.Controllers
             {
                 return NoContent();
             }
-            var recipesMapped = this._mapper.Map<IEnumerable<Recipe>, IEnumerable<GetRecipeDto>>(recipes);
+            //var recipesMapped = this._mapper.Map<IEnumerable<Recipe>, IEnumerable<GetRecipeDto>>(recipes);
             this.AddCountToHeader(recipes);
             //return Ok(this._mapper.Map<List<RecipeBase>, List<RecipeBaseDto>>(recipes));
-            return Ok(recipesMapped);
+            return Ok(recipes);
         }
 
         /// <summary>
@@ -70,9 +70,9 @@ namespace RecipesApi.Controllers
             {
                 return NoContent();
             }
-            var recipeMapped = this._mapper.Map<Recipe, GetRecipeDto>(recipe);
+            //var recipeMapped = this._mapper.Map<Recipe, GetRecipeDto>(recipe);
             //return Ok(this._mapper.Map<RecipeBase,RecipeBaseDto>(recipe));
-            return Ok(recipeMapped);
+            return Ok(recipe);
         }
 
         /// <summary>

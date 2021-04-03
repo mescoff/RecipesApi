@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
@@ -50,7 +51,12 @@ namespace RecipesApi.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime? CreationDate { get; set; }
 
+        [JsonIgnore]
+        // To Fix inability of NET Json to deserialize property that's hidden in children class : https://github.com/dotnet/runtime/issues/30964
         public IList<Ingredient> Ingredients { get; set; }
+
+        [JsonIgnore] 
+        // Why: see Ingredients
         public IList<Media> Medias { get; set; }
         public IList<Instruction> Instructions { get; set; }
         public IList<RecipeCategory> RecipeCategories { get; set; }

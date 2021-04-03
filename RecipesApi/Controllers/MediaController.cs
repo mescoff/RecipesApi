@@ -15,6 +15,7 @@ namespace RecipesApi.Controllers
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class MediaController : ControllerBase
     {
 
