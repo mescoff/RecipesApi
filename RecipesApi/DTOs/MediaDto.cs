@@ -16,11 +16,11 @@ namespace RecipesApi.DTOs
 
         [Required]
         [MaxLength(200)]
-        [RegularExpression("[a-z-A-Z-0-9]", ErrorMessage = "Media title can only have regular characters (a to z) or digits")]
+        [RegularExpression("^[a-zA-Z0-9_]*$", ErrorMessage = "The Media title can only contain MAJ or MIN letters, digits, or _")]
         public string Title { get; set; }
 
         [MaxLength(50)]
-        [RegularExpression("[a-z-A-Z-0-9]", ErrorMessage = "Media tag can only have regular characters (a to z) or digits")]
+        [RegularExpression("^[a-zA-Z0-9_]*$", ErrorMessage = "The Media tag can only contain MAJ or MIN letters, digits, or _")]
 
         public string Tag { get; set; }
 
