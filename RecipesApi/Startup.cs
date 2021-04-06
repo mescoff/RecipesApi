@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -38,15 +39,35 @@ namespace RecipesApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            // ********************
+            // Setup CORS
+            // ********************
+            //https://stackoverflow.com/questions/40043097/cors-in-net-core
+            var corsBuilder = new CorsPolicyBuilder();
+            corsBuilder.AllowAnyHeader();
+            corsBuilder.AllowAnyMethod();
+            corsBuilder.AllowAnyOrigin(); // For anyone access.
+            corsBuilder.WithOrigins("http://localhost:3000"); // for a specific url. Don't add a forward slash on the end!
+            corsBuilder.AllowCredentials();
+
             services.AddCors(options =>
             {
-                options.AddDefaultPolicy(builder =>
-                {
-                    builder.WithOrigins("http://localhost:3000");
-                });
+                //options.AddDefaultPolicy(builder =>
+                //{
+                //    // TODO: check AllowAnyHeaders. + Refine policy on long run https://docs.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-5.0#attr
+                //    //builder.WithOrigins("http://localhost:3000")
+                //    builder.WithOrigins("http://*")
+                //        .AllowAnyOrigin () // try this
+                //        .AllowAnyMethod()
+                //        .AllowAnyHeader()
+                //        .AllowCredentials();
+                //});
+                options.AddPolicy("SameServerPolicy", corsBuilder.Build());
             });
             services.AddAutoMapper(typeof(Startup));
             services.AddControllers();
+        
 
             // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
             // Using Pomelo instead which support NetCore 3+
@@ -104,7 +125,8 @@ namespace RecipesApi
             app.UseHttpsRedirection();
             app.UseRouting();
 
-            app.UseCors();
+            //app.UseCors();
+            app.UseCors("SameServerPolicy");
 
             app.UseAuthorization();
 
