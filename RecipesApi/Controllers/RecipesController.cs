@@ -1,17 +1,17 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
-using RecipesApi.Models;
 using Microsoft.AspNetCore.Http;
 using System.Threading.Tasks;
 using RecipesApi.DTOs.Recipes;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Cors;
 
 namespace RecipesApi.Controllers
 {
     /// <summary>
     /// Recipes Controller
     /// </summary>
+    [EnableCors("SameServerPolicy")] // TODO: remove in PROD
     [Route("api/[controller]")]
     [ApiController]
     //[ValidateModel]
@@ -70,8 +70,6 @@ namespace RecipesApi.Controllers
             {
                 return NoContent();
             }
-            //var recipeMapped = this._mapper.Map<Recipe, GetRecipeDto>(recipe);
-            //return Ok(this._mapper.Map<RecipeBase,RecipeBaseDto>(recipe));
             return Ok(recipe);
         }
 
@@ -127,7 +125,6 @@ namespace RecipesApi.Controllers
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status200OK)]
-      
         public async Task<ActionResult> Put([FromBody] RecipeDto recipe)
         {
          
