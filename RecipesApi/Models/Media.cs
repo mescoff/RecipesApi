@@ -37,7 +37,7 @@ namespace RecipesApi.Models
         [Range(1, int.MaxValue)]
         public int Recipe_Id { get; set; }
 
-        public int RecipeInst_Id { get; set; }
+        //public int RecipeInst_Id { get; set; }
 
         /// <summary>
         /// Adding a way to retrieve property through reflection

@@ -192,7 +192,7 @@ namespace RecipesApi
                 catch (Exception e)
                 {
                     //this.Context.Entry(dbRecipe).State = EntityState.Unchanged;
-                    var errorMessage = $"Error while updating entity. Rolling back changes: Entity={JsonConvert.SerializeObject(dbRecipe)} ErrorMessage ={e.InnerException?.Message}";
+                    var errorMessage = $"Error while updating entity. Rolling back changes: Entity={JsonConvert.SerializeObject(dbRecipe)} ErrorMessage ={JsonConvert.SerializeObject(e)}";
                     _logger.LogError(errorMessage);
                     return false;
                 }
@@ -222,7 +222,7 @@ namespace RecipesApi
                 //if (recipeDtoMediasId.Any())
                 //{
                 //var dbMediasToDelete = this.Context.Set<Media>().Where(m => recipeDtoMediasId.Contains(m.Id));
-                var deleteStatus = HandleDeletingMedia(dbRecipe.Medias);
+                var deleteStatus = HandleDeletingPhysicalMedia(dbRecipe.Medias);
                 if (deleteStatus.Success == false)
                 {
                     // TODO: return full message on what happened
@@ -390,7 +390,6 @@ namespace RecipesApi
                 if (itemsIdsToDelete.Count() > 0)
                 {
                     // create new list of items with just Id and delete (rather than using item from DB Recipe that is tracked)
-                    //var itemsToDelete = existingRecipeItems.Where(i => itemsIdsToDelete.Contains(i.Id)).Select(i => new TEntity { Id = i.Id });
                     // TODO: !!!! waste of time, we could directly convert to TEntity, but it doesn't have Id because doesn't implement ICustomModel
                     var itemsToDelete = existingRecipeItems.Where(i => itemsIdsToDelete.Contains(i.Id)).Select(i => new TEntity { Id = i.Id });
                     // Map Base type to Entity type.        
@@ -466,12 +465,16 @@ namespace RecipesApi
                 if (mediasIdsToDelete.Count() > 0)
                 {
                     // Get medias from DB (medias with actual paths) that need to be deleted
-                    var dbMediasToDelete = existingRecipeMedias.Where(m => mediasIdsToDelete.Contains(m.Id));
-                    var deleteStatus = HandleDeletingMedia(dbMediasToDelete);
+                    var dbMediasToPhysicallyDelete = existingRecipeMedias.Where(m => mediasIdsToDelete.Contains(m.Id));
+                    var deleteStatus = HandleDeletingPhysicalMedia(dbMediasToPhysicallyDelete);
+                    // Then delete medias from DB
+                    // !!! create new list of medias with just Id and delete (to avoid deleting entity with tracked dependencies -- aka children with loop ref to Recipe or Unit)
+                    var dbMediasToDelete = dbMediasToPhysicallyDelete.Select(i => new Media { Id = i.Id, Recipe_Id = i.Id });
+                    this.Context.Set<Media>().RemoveRange(dbMediasToDelete);
                 }
 
                 // UPDATE matching medias (between Existing and Updated recipe) if difference in properties is registered          
-                // Retrieve received Media(Dto) that match db Media (that has path). Freezing result with toList()
+                // Retrieve received Media(Dto) that match db Media (that has path). Don't keep related entities. Freezeresult with toList()
                 var mediasToUpdate = existingRecipeMedias.Where(m => mediasIdsInCommon.Contains(m.Id)).ToList();
                 // Run through items on updated recipe and DB recipe, If they contain the same info skip. Otherwise update
                 foreach (var media in mediasToUpdate)
@@ -480,6 +483,8 @@ namespace RecipesApi
                     var receivedMedia = updatedRecipeMediasDtos.SingleOrDefault(i => i.Id == media.Id);
                     if (receivedMedia != null)
                     {
+                        // Remove related entities from Media to avoid self referencing loop
+                        media.Recipe = null;
                         // Attach media to start tracking updates/modif
                         this.Context.Set<Media>().Attach(media);
 
@@ -555,12 +560,46 @@ namespace RecipesApi
         #endregion
 
         #region Helper methods
-        private ServiceResponse HandleDeletingMedia(IEnumerable<Media> mediasToDelete)
+
+        //private void UpdateModifiedProperties(object entityFromClient, object entityFromDB)
+        //{
+        //    var receivedMediaProps = entityFromClient.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
+        //    foreach (var prop in receivedMediaProps)
+        //    {
+        //        object mediaVal;
+        //        try
+        //        {
+        //            mediaVal = entityFromDB[prop.Name];
+        //        }
+        //        catch (NullReferenceException e)
+        //        {
+        //            // Expected. Property doesn't exist on Media. Skip check
+        //            continue;
+        //        }
+        //        var mediaDtoVal = entityFromClient[prop.Name];
+        //        // IF property existed on both objects, and value differ. Override dbMedia with updated value
+        //        // Have to be repetitive here because we're using "objects" and can't use !=. But Equals won't work on nullref objects
+        //        // If prop is null on one of the media/mediaDto but not both, update
+        //        if ((mediaVal == null ^ mediaDtoVal == null))
+        //        {
+        //            entityFromDB[prop.Name] = mediaDtoVal;
+        //            this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
+        //        }
+        //        else if (!(mediaVal == null && mediaDtoVal == null) && !mediaVal.Equals(mediaDtoVal))
+        //        {
+        //            entityFromDB[prop.Name] = mediaDtoVal;
+        //            this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
+        //        }
+        //    }
+        //}
+
+        private ServiceResponse HandleDeletingPhysicalMedia(IEnumerable<Media> mediasToDelete)
         {
             if (mediasToDelete == null || !mediasToDelete.Any()) { return new ServiceResponse { Success = true, Message = "No Media to Delete" }; }
             this._logger.LogInformation($"About to DELETE {mediasToDelete.Count()} medias for Recipe [Id:{mediasToDelete.First().Id}]");
             // Delete all medias at path
             var deleteStatus = new ServiceResponse { Success = true };
+            string msg = "";
             foreach (var media in mediasToDelete)
             {
                 if (File.Exists(media.MediaPath))
@@ -572,7 +611,7 @@ namespace RecipesApi
                     }
                     catch (Exception e)
                     {
-                        var msg = $"Something happened when trying to DELETE Media on local storage [ID:{media.Id}, PATH:{media.MediaPath}]";
+                        msg = $"Something happened when trying to DELETE Media on local storage [ID:{media.Id}, PATH:{media.MediaPath}]";
                         this._logger.LogError(msg + ", Error:", e);
                         deleteStatus.Success = false;
                         // I decide to return by default and prevent further deletion. Behavior to rethink in future
@@ -581,9 +620,10 @@ namespace RecipesApi
                     }
                     // TODO: Make sure file no longer exist?
                 }
+                // File was not found. Specify it.
+                msg = $"The following file does not exist [ID:{media.Id}, PATH:{media.MediaPath}]. Will simply remove from DB";
+                this._logger.LogWarning(msg);
             }
-            // Then delete medias
-            this.Context.Set<Media>().RemoveRange(mediasToDelete);
             return deleteStatus;
         }
 
@@ -601,7 +641,7 @@ namespace RecipesApi
             foreach (var mediaDto in mediasToSave)
             {
                 // Step 1 - Create "dummy" media (copy of dto) with empty path
-                var media = new Media { Id = 0, MediaPath = String.Empty, RecipeInst_Id = mediaDto.RecipeInst_Id, Recipe_Id = mediaDto.Recipe_Id, Tag = mediaDto.Tag, Title = mediaDto.Title };
+                var media = new Media { Id = 0, MediaPath = String.Empty, Recipe_Id = mediaDto.Recipe_Id, Tag = mediaDto.Tag, Title = mediaDto.Title };
                 //var dto = MediaDto.Copy(mediaDto);
                 mediasPairTracker.Add(new IMedia[2] { mediaDto, media });
             }

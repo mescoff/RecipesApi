@@ -22,7 +22,7 @@ namespace RecipesApi.Models
         [MaxLength(500, ErrorMessage = "Description cannot be longer than 500 characters")]
         public string Description { get; set; }
 
-        //[Required]
+        //[Required] adding range is enough
         [Range(1, int.MaxValue, ErrorMessage = "Instruction needs a valid Recipe_Id")]
         public int Recipe_Id { get; set; }
 
@@ -30,10 +30,10 @@ namespace RecipesApi.Models
         [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
         public Recipe Recipe { get; set; }
 
-        [JsonIgnore]
         public int? RecipeMedia_Id { get; set; }
 
         [ForeignKey("RecipeMedia_Id")]
+        [JsonIgnore]
         public Media Media { get; set; } // TODO: This is probably broken
 
         public bool Equals(Instruction obj)

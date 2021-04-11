@@ -8,6 +8,8 @@ namespace RecipesApi.Models
     public interface ICustomModel<T>: IEquatable<T>  where T : class
     {
         int Id { get; set; }
+
+     
         //bool Equals(T obj);
     }
 }

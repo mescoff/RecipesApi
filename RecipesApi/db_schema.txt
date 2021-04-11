@@ -45,7 +45,6 @@ CREATE TABLE recipe_medias(
     Title varchar(200) NOT NULL,
     Tag varchar(50),
     Recipe_Id INT NOT NULL,
-    RecipeInst_Id INT,
     PRIMARY KEY (RecipeMedia_Id),
     FOREIGN KEY (Recipe_Id) REFERENCES recipes(Recipe_Id) ON DELETE CASCADE,
 );

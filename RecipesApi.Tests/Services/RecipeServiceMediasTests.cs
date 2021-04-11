@@ -512,6 +512,14 @@ namespace RecipesApi.Tests.Services
                     this._contextMedia = medias;
                 }
 
+                // Add Ingredients to add extra complexity and make sure we check for errors on attached entities/loops
+                // Example: When Media prop are updated, we attach media that should always be stripped of related entities (like the recipe, which has ingredients, which has units
+                // and introduces a loop bug). This bug will only be seen if we also have ingredients on recipe (because it references another object etc)
+                var ingredients = new List<Ingredient> {
+                        new Ingredient { Id = 0, Name = "Chocolate", Quantity = 4, Unit_Id = 1 },
+                        new Ingredient { Id = 0, Name = "Flour", Quantity = 4, Unit_Id = 1 }
+                    };
+
                 // Adding a Recipe with 2 instructions
                 context.Recipes.Add(new Recipe()
                 {
@@ -523,7 +531,8 @@ namespace RecipesApi.Tests.Services
                     OriginalLink = "",
                     AuditDate = null,
                     CreationDate = null,
-                    Medias = medias
+                    Medias = medias,
+                    Ingredients = ingredients
                 });
                 context.SaveChanges();
             }
