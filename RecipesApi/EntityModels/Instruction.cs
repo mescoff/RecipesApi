@@ -36,6 +36,17 @@ namespace RecipesApi.Models
         [JsonIgnore]
         public Media Media { get; set; } // TODO: This is probably broken
 
+        /// <summary>
+        /// Adding a way to retrieve property through reflection
+        /// </summary>
+        /// <param name="propertyName">Property Name</param>
+        /// <returns>Value of property on Get. Otherwise nothing</returns>
+        public object this[string propertyName]
+        {
+            get { return this.GetType().GetProperty(propertyName).GetValue(this, null); }
+            set { this.GetType().GetProperty(propertyName).SetValue(this, value, null); }
+        }
+
         public bool Equals(Instruction obj)
         {
             return (

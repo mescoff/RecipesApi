@@ -1,39 +1,26 @@
 ﻿using RecipesApi.Models;
-using System;
 using System.Collections.Generic;
 
 namespace RecipesApi.DTOs.Recipes
 {
-    // For now creating a general RecipeDto that will be used in Service.
-    // Needed for Media... Media needs to be transformed at Service level from DTO to Db Model
-    // For now this is my solution
 
     /// <summary>
     /// Recipe class with overriden properties to allow better flexibility
     /// </summary>
-    public class RecipeDto : Recipe, IEquatable<RecipeDto>
+    public class RecipeDto : RecipeBase //IEquatable<RecipeDto>
     {
         public RecipeDto()
         {
             this.Medias = new List<MediaDto>();
             this.Ingredients = new List<IngredientBase>();
+            this.Instructions = new List<Instruction>();
+            this.RecipeCategories = new List<RecipeCategory>();
         }
 
-        public new IList<MediaDto> Medias { get; set; }
-        public new IList<IngredientBase> Ingredients { get; set; }  // TODO:
+        public IList<MediaDto> Medias { get; set; }
+        public IList<IngredientBase> Ingredients { get; set; } 
 
-        public bool Equals(RecipeDto obj)
-        {
-            return (
-               this.Id == obj.Id &&
-               this.TitleShort == obj.TitleShort &&
-               this.TitleLong == obj.TitleLong &&
-               this.Description == obj.Description &&
-               this.OriginalLink == obj.OriginalLink &&
-               this.LastModifier == obj.LastModifier &&
-               this.AuditDate == obj.AuditDate &&
-               this.CreationDate == obj.CreationDate
-               );
-        }
+        public IList<Instruction> Instructions { get; set; }
+        public IList<RecipeCategory> RecipeCategories { get; set; }
     }
 }

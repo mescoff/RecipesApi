@@ -5,7 +5,6 @@ using Newtonsoft.Json;
 using RecipesApi.DTOs;
 using RecipesApi.DTOs.Recipes;
 using RecipesApi.Models;
-using RecipesApi.Services;
 using RecipesApi.Utils;
 using System;
 using System.Collections.Generic;
@@ -132,60 +131,42 @@ namespace RecipesApi
                 {
                     //this.Entities.Attach(recipe);           
 
-                    // Update Ingredients
+                    // UPDATE Ingredients
                     ScanAndApplyChanges<Ingredient>(updatedRecipe.Ingredients, dbRecipe.Ingredients);
 
-                    // Update Instrutions
+                    // UPDATE Instrutions
                     ScanAndApplyChanges<Instruction>(updatedRecipe.Instructions, dbRecipe.Instructions);
 
-                    // Update Media
-                    // Get DB Medias that match recipe ID, we need medias not mediaDtos for Existing medias
+                    // UPDATE Media
+                    // Get DB Medias that match recipe ID, we need medias not mediaDtos for existingMedias argument
                     ScanForImageUpdates(updatedRecipeDto.Medias, dbRecipe.Medias);
 
-                    // Update recipe itself
-                    // TODO: (1) test with just update instead of below. (2) check if we shouldn't do below when updating related entities (rather than using update)
-                    // TODO: !!! this always overrides Recipe props. Check if it's different first
-                    this.Context.Entry(dbRecipe).CurrentValues.SetValues(updatedRecipeDto);  // setting all values
-                    this.Context.Entry(dbRecipe).State = EntityState.Modified;
-
-                    // UPDATE REGULAR PROPS: Go through each --matching-- properties between the 2 objects (media vs mediaDto)
-                    // Using reflection here to not have to update this code if we add more properties in the future (that are easy to handle)
-                    //var receivedRecipeProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0); // Removing Indexed Property (Item) to prevent circular get
-                    // TODO: Implement
-                    //foreach (var prop in receivedMediaProps)
-                    //{
-                    //    object mediaVal;
-                    //    try
-                    //    {
-                    //        mediaVal = media[prop.Name];
-                    //    }
-                    //    catch (NullReferenceException e)
-                    //    {
-                    //        // Expected. Property doesn't exist on Media. Skip check
-                    //        continue;
-                    //    }
-                    //    var mediaDtoVal = receivedMedia[prop.Name];
-                    //    // IF property existed on both objects, and value differ. Override dbMedia with updated value
-                    //    // Have to be repetitive here because we're using "objects" and can't use !=. But Equals won't work on nullref objects
-                    //    // If prop is null on one of the media/mediaDto but not both, update
-                    //    if ((mediaVal == null ^ mediaDtoVal == null))
-                    //    {
-                    //        media[prop.Name] = mediaDtoVal;
-                    //        this.Context.Entry(media).Property(prop.Name).IsModified = true;
-                    //    }
-                    //    else if (!(mediaVal == null && mediaDtoVal == null) && !mediaVal.Equals(mediaDtoVal))
-                    //    {
-                    //        media[prop.Name] = mediaDtoVal;
-                    //        this.Context.Entry(media).Property(prop.Name).IsModified = true;
-                    //    }
-                    //}
-
-                    // TODO: finish below
-                    //var receivedRecipeProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0); // Removing Indexed Property (Item) to prevent circular get
-                    //foreach (var prop in receivedMediaProps)
-                    //{
-
-                    var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
+                    // UPDATE recipe properties
+                    // [!] Cannot go through properties in generic way here because we only want to check base props (not related entities) and the ones that are modifable
+                    var strippedDbRecipe = new Recipe { Id = dbRecipe.Id, TitleShort = dbRecipe.TitleShort, TitleLong = dbRecipe.TitleLong, Description = dbRecipe.Description, OriginalLink = dbRecipe.OriginalLink, LastModifier = dbRecipe.LastModifier, AuditDate = dbRecipe.AuditDate, CreationDate = dbRecipe.CreationDate };
+                    // Attach recipe to start tracking updates/modif
+                    this.Context.Set<Recipe>().Attach(strippedDbRecipe);
+                    if (strippedDbRecipe.TitleShort != updatedRecipeDto.TitleShort)
+                    {
+                        strippedDbRecipe.TitleShort = updatedRecipeDto.TitleShort;
+                    }
+                    if (strippedDbRecipe.TitleLong != updatedRecipeDto.TitleLong)
+                    {
+                        strippedDbRecipe.TitleLong = updatedRecipeDto.TitleLong;
+                    }
+                    if (strippedDbRecipe.Description != updatedRecipeDto.Description)
+                    {
+                        strippedDbRecipe.Description = updatedRecipeDto.Description;
+                    }
+                    if (strippedDbRecipe.OriginalLink != updatedRecipeDto.OriginalLink)
+                    {
+                        strippedDbRecipe.OriginalLink = updatedRecipeDto.OriginalLink;
+                    }
+                    if (strippedDbRecipe.LastModifier != updatedRecipeDto.LastModifier)
+                    {
+                        strippedDbRecipe.LastModifier = updatedRecipeDto.LastModifier;
+                    }                             
+                    // var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
 
                     result = this.Context.SaveChanges();
                 }
@@ -561,37 +542,37 @@ namespace RecipesApi
 
         #region Helper methods
 
-        //private void UpdateModifiedProperties(object entityFromClient, object entityFromDB)
-        //{
-        //    var receivedMediaProps = entityFromClient.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
-        //    foreach (var prop in receivedMediaProps)
-        //    {
-        //        object mediaVal;
-        //        try
-        //        {
-        //            mediaVal = entityFromDB[prop.Name];
-        //        }
-        //        catch (NullReferenceException e)
-        //        {
-        //            // Expected. Property doesn't exist on Media. Skip check
-        //            continue;
-        //        }
-        //        var mediaDtoVal = entityFromClient[prop.Name];
-        //        // IF property existed on both objects, and value differ. Override dbMedia with updated value
-        //        // Have to be repetitive here because we're using "objects" and can't use !=. But Equals won't work on nullref objects
-        //        // If prop is null on one of the media/mediaDto but not both, update
-        //        if ((mediaVal == null ^ mediaDtoVal == null))
-        //        {
-        //            entityFromDB[prop.Name] = mediaDtoVal;
-        //            this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
-        //        }
-        //        else if (!(mediaVal == null && mediaDtoVal == null) && !mediaVal.Equals(mediaDtoVal))
-        //        {
-        //            entityFromDB[prop.Name] = mediaDtoVal;
-        //            this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
-        //        }
-        //    }
-        //}
+        private void UpdateModifiedProperties<T>(ICustomModel<T> entityFromClient, ICustomModel<T> entityFromDB) where T: class, new()
+        {
+            var receivedMediaProps = entityFromClient.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
+            foreach (var prop in receivedMediaProps)
+            {
+                object entityFromDbValue;
+                try
+                {
+                    entityFromDbValue = entityFromDB[prop.Name];
+                }
+                catch (NullReferenceException e)
+                {
+                    // Expected. Property doesn't exist on Media. Skip check
+                    continue;
+                }
+                var entityFromClientValue = entityFromClient[prop.Name];
+                // IF property existed on both objects, and value differ. Override dbMedia with updated value
+                // Have to be repetitive here because we're using "objects" and can't use !=. But Equals won't work on nullref objects
+                // If prop is null on one of the media/mediaDto but not both, update
+                if ((entityFromDbValue == null ^ entityFromClientValue == null))
+                {
+                    entityFromDB[prop.Name] = entityFromClientValue;
+                    this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
+                }
+                else if (!(entityFromDbValue == null && entityFromClientValue == null) && !entityFromDbValue.Equals(entityFromClientValue))
+                {
+                    entityFromDB[prop.Name] = entityFromClientValue;
+                    this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
+                }
+            }
+        }
 
         private ServiceResponse HandleDeletingPhysicalMedia(IEnumerable<Media> mediasToDelete)
         {

@@ -32,17 +32,28 @@ namespace RecipesApi.Models
         [Range(1, int.MaxValue, ErrorMessage = "Ingredient needs a valid Unit_Id")]
         public int Unit_Id { get; set; }
 
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this);
-        }
-
         [ForeignKey("Recipe_Id")]
         [JsonIgnore] // Ignore it to avoid cycle loop when querying Recipes. IMPORTANT
         public Recipe Recipe {get; set;}
 
         [ForeignKey("Unit_Id")]
         public Unit Unit { get; set; }
+
+        /// <summary>
+        /// Adding a way to retrieve property through reflection
+        /// </summary>
+        /// <param name="propertyName">Property Name</param>
+        /// <returns>Value of property on Get. Otherwise nothing</returns>
+        public object this[string propertyName]
+        {
+            get { return this.GetType().GetProperty(propertyName).GetValue(this, null); }
+            set { this.GetType().GetProperty(propertyName).SetValue(this, value, null); }
+        }
+
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
 
         public bool Equals(Ingredient obj)
         {

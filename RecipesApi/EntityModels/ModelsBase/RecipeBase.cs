@@ -1,24 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace RecipesApi.Models
 {
-    [Table("recipes")]
-
-    public class Recipe : ICustomModel<Recipe> //, IEquatable<Recipe>
+    public abstract class RecipeBase: ICustomModel<Recipe>
     {
-
-        public Recipe()
-        {
-            this.Ingredients = new List<Ingredient>();
-            this.Medias = new List<Media>();
-            this.Instructions = new List<Instruction>();
-            this.RecipeCategories = new List<RecipeCategory>();
-        }
 
         [Key]
         [Column("Recipe_Id")]
@@ -51,16 +39,21 @@ namespace RecipesApi.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public DateTime? CreationDate { get; set; }
 
-        [JsonIgnore]
-        // To Fix inability of NET Json to deserialize property that's hidden in children class : https://github.com/dotnet/runtime/issues/30964
-        public IList<Ingredient> Ingredients { get; set; }
+        /// <summary>
+        /// Adding a way to retrieve property through reflection
+        /// </summary>
+        /// <param name="propertyName">Property Name</param>
+        /// <returns>Value of property on Get. Otherwise nothing</returns>
+        public object this[string propertyName]
+        {
+            get { return this.GetType().GetProperty(propertyName).GetValue(this, null); }
+            set { this.GetType().GetProperty(propertyName).SetValue(this, value, null); }
+        }
 
-        [JsonIgnore] 
-        // Why: see Ingredients
-        public IList<Media> Medias { get; set; }
-        public IList<Instruction> Instructions { get; set; }
-        public IList<RecipeCategory> RecipeCategories { get; set; }
-        //public IEnumerable<TimeInterval> TimeIntervals { get; set; }
+        public override string ToString()
+        {
+            return JsonSerializer.Serialize(this);
+        }
 
         public bool Equals(Recipe obj)
         {
@@ -74,11 +67,6 @@ namespace RecipesApi.Models
                 this.AuditDate == obj.AuditDate &&
                 this.CreationDate == obj.CreationDate
                 );
-        }
-
-        public override string ToString()
-        {
-            return JsonSerializer.Serialize(this);
         }
     }
 }

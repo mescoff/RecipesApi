@@ -124,51 +124,11 @@ namespace RecipesApi.Tests.Services
             }
         }
 
-        [Test]
-        [Ignore("Not working at the moment")]
-        // TODO: isn't this handled by validation tests ?
-        public async Task RecipeAdd_WithShortTitleLongerThan50Char_Fails()
-        {
-            // each test creates new Connection / Options / DbSchema
-            var connection = new SqliteConnection("DataSource=:memory:");
-            connection.Open();
-
-            try
-            {
-                var options = new DbContextOptionsBuilder<RecipesContext>()
-                    .UseSqlite(connection)
-                    .Options;
-
-                SetupBasicContext(options); // TODO: move into setup?
-                using (var context = new RecipesContext(options))
-                {
-                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
-                    var rdm = new Random();
-                    var shortTitle = rdm.GenerateRandomString(52);
-                    var length = shortTitle.Length;
-                    var newRecipe = new RecipeDto { Description = "Something", LastModifier = "xx", TitleShort = shortTitle };
-                    // 
-                    //Assert.ThrowsAsync<SqliteException>(async () => await service.AddOne(newRecipe));
-
-                    var response = await service.AddOne(newRecipe);
-                    Assert.IsFalse(response.Success);
-                    Assert.IsTrue(response.Message.Contains("Microsoft.EntityFrameworkCore.DbUpdateException"));
-                    Assert.IsTrue(response.Message.Contains("SQLite Error 19"));
-                    Assert.IsTrue(response.Message.Contains("NOT NULL constraint failed: recipes.TitleShort"));
-                }
-
-            }
-            finally
-            {
-                connection.Close();
-            }
-        }
-
         #endregion
 
         #region Update
         [Test]
-        public async Task RecipeUpdate_UpdatingRecipe_IsUpdated()
+        public async Task RecipeUpdate_UpdatingRecipeTitleShort_IsUpdated()
         {
             // each test creates new Connection / Options / DbSchema
             var connection = new SqliteConnection("DataSource=:memory:");
@@ -202,6 +162,126 @@ namespace RecipesApi.Tests.Services
                     Assert.AreEqual("Banana pancakes", newRecipe.TitleShort);
                     Assert.AreEqual("https://www.something.com", newRecipe.OriginalLink);
                     // TODO: Test also that auditDate and creationDate are ignored (and handled by database)
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test]
+        public async Task RecipeUpdate_UpdatingRecipeTitleLong_IsUpdated()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options);
+
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
+                    var recipeUpdate = await service.GetOne(4);
+
+                    // modifying recipe properties
+                    recipeUpdate.TitleLong = "Banana pancakes";
+
+
+                    await service.UpdateOne(recipeUpdate);
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
+                    // get recipe again
+                    var newRecipe = await service.GetOne(4);
+                    Assert.AreEqual("Banana pancakes", newRecipe.TitleLong);
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test]
+        public async Task RecipeUpdate_UpdatingRecipeDescription_IsUpdated()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options);
+
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
+                    var recipeUpdate = await service.GetOne(4);
+
+                    // modifying recipe properties
+                    recipeUpdate.Description = "Something";
+
+
+                    await service.UpdateOne(recipeUpdate);
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
+                    // get recipe again
+                    var newRecipe = await service.GetOne(4);
+                    Assert.AreEqual("Something", newRecipe.Description);
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        [Test]
+        public async Task RecipeUpdate_UpdatingRecipeLastModifier_IsUpdated()
+        {
+            // each test creates new Connection / Options / DbSchema
+            var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+
+            try
+            {
+                var options = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseSqlite(connection)
+                    .Options;
+
+                SetupBasicContext(options);
+
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
+                    var recipeUpdate = await service.GetOne(4);
+
+                    // modifying recipe properties
+                    recipeUpdate.LastModifier = "mark.x";
+
+
+                    await service.UpdateOne(recipeUpdate);
+                }
+                using (var context = new RecipesContext(options))
+                {
+                    var service = new RecipesService(context, this._loggerMock.Object, this._mediaHelper.Object, this._mapper);
+                    // get recipe again
+                    var newRecipe = await service.GetOne(4);
+                    Assert.AreEqual("mark.x", newRecipe.LastModifier);
                 }
             }
             finally
