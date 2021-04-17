@@ -43,7 +43,7 @@ namespace RecipesApi
             }
             catch (Exception e)
             {
-                this._logger.LogError($"Something happened: {e.InnerException}", e);
+                this._logger.LogError($"Database isn't reachable. Exception: {e.InnerException}", e);
                 throw e;
             }
         }
@@ -139,7 +139,7 @@ namespace RecipesApi
 
                     // UPDATE Media
                     // Get DB Medias that match recipe ID, we need medias not mediaDtos for existingMedias argument
-                    ScanForImageUpdates(updatedRecipeDto.Medias, dbRecipe.Medias);
+                    ScanForAndApplyImageUpdates(updatedRecipeDto.Medias, dbRecipe.Medias);
 
                     // UPDATE recipe properties
                     // [!] Cannot go through properties in generic way here because we only want to check base props (not related entities) and the ones that are modifable
@@ -178,7 +178,7 @@ namespace RecipesApi
                     return false;
                 }
 
-                return result > 0;
+                return result >= 0;
             }
             return false;
         }
@@ -389,16 +389,11 @@ namespace RecipesApi
                     var receivedItem = updatedRecipeItems.SingleOrDefault(i => i.Id == existingItem.Id);
                     if (receivedItem != null && !existingItem.Equals(receivedItem))
                     {
-                        // TODO: GOOD TO KNOW: here we can use a DTO that's not translated if needed in update, as long as updated object has same properties as existing
-                        //this.Context.Entry(existingIng).CurrentValues.SetValues(receivedIng);  // TODO: BUG values are not set to modified 
-                        // var x = this.Context.Entry(existingIng).State;
-                        //var entries = this.Context.ChangeTracker.Entries(); // FOR DEBUGGING (add to watch to see what changes were detectdd on context side)
+                        // TODO: GOOD TO KNOW: here we can use a DTO that's not translated if needed in update, as long as updated object has same properties as existing (but then base Type needs to be provided too)
+                        // BELOW TO BE UNCOMMENTED TO REPLACE this.Context.Set.Update()
+                        //this.UpdateModifiedProperties(receivedItem, existingItem);
 
-
-                        // Map Base type to Entity type.        
-                        //var receivedItemConverted = this._mapper.Map<TBase, TEntity>(receivedItem);
-      
-                        // We  entire object. It's easier for now
+                        // So for now We override entire object with values received from client. It's easier though not very efficient 
                         this.Context.Set<TEntity>().Update(receivedItem); // TODO: go through each prop like in Media Update to only update prop necessary
                     }
                 }
@@ -411,7 +406,7 @@ namespace RecipesApi
         /// </summary>
         /// <param name="updatedRecipeMediasDtos">The list of medias (Dtos) on received recipe</param>
         /// <param name="existingRecipeMedias">The list of medias on matching recipe in DB</param>
-        private void ScanForImageUpdates(IEnumerable<MediaDto> updatedRecipeMediasDtos, IEnumerable<Media> existingRecipeMedias)
+        private void ScanForAndApplyImageUpdates(IEnumerable<MediaDto> updatedRecipeMediasDtos, IEnumerable<Media> existingRecipeMedias)
         {
             if (!updatedRecipeMediasDtos.Any() && !existingRecipeMedias.Any()) { return; }
 
@@ -466,11 +461,12 @@ namespace RecipesApi
                     {
                         // Remove related entities from Media to avoid self referencing loop
                         media.Recipe = null;
-                        // Attach media to start tracking updates/modif
+                        // Attach media (of type Media = DBEntity) to start tracking updates/modif
                         this.Context.Set<Media>().Attach(media);
 
                         // UPDATE REGULAR PROPS: Go through each --matching-- properties between the 2 objects (media vs mediaDto)
                         // Using reflection here to not have to update this code if we add more properties in the future (that are easy to handle)
+                        // TODO: Use UpdateModifiedProperties() (look into using ICustomModel with Media/MediaDto. Like we did for IngredientBase)
                         var receivedMediaProps = receivedMedia.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
                         foreach (var prop in receivedMediaProps)
                         {
@@ -531,8 +527,6 @@ namespace RecipesApi
 
 
                         // TODO: TEST UPDATE / DELETE / ADD when media already exist in recipe
-
-
                     }
                 }
 
@@ -542,10 +536,24 @@ namespace RecipesApi
 
         #region Helper methods
 
-        private void UpdateModifiedProperties<T>(ICustomModel<T> entityFromClient, ICustomModel<T> entityFromDB) where T: class, new()
+        /// <summary>
+        /// Generic method to update with precision the entity's properties that were modified by client
+        /// </summary>
+        /// <typeparam name="TEntity">The db entity's type</typeparam>
+        /// <param name="entityFromClient">The updated object/entity coming from the client</param>
+        /// <param name="entityFromDB">The object/entity currently in DB</param>
+        private void UpdateModifiedProperties<TEntity>(TEntity entityFromClient, TEntity entityFromDB) where TEntity : class, ICustomModel<TEntity>, new()
         {
-            var receivedMediaProps = entityFromClient.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
-            foreach (var prop in receivedMediaProps)
+            // TODO: [04/12] WARNING. THis will not work if we use properties of Entity, we need to use properties of Base class which is stripped of related entities
+            // SO solution would be to provide base/stripped class here as the entityFromClient (like in what we do for Media) and pass it somehow here.
+            // BUT then we still need the TEntity type for this.Context.Set<TEntity>.... 
+            // Find a way to do it
+
+            // [Reminder] Received item is converted to Entity but is still stripped of related entities/children so it's safe to attach it
+            this.Context.Set<TEntity>().Attach(entityFromClient);
+
+            var receivedItemProps = entityFromClient.GetType().GetProperties().Where(p => p.GetIndexParameters().Length == 0).ToList(); // Removing Indexed Property (Item) to prevent circular get
+            foreach (var prop in receivedItemProps)
             {
                 object entityFromDbValue;
                 try
@@ -558,18 +566,18 @@ namespace RecipesApi
                     continue;
                 }
                 var entityFromClientValue = entityFromClient[prop.Name];
-                // IF property existed on both objects, and value differ. Override dbMedia with updated value
+                // IF property existed on both objects, and value differ: Specify that this property was modified.
                 // Have to be repetitive here because we're using "objects" and can't use !=. But Equals won't work on nullref objects
-                // If prop is null on one of the media/mediaDto but not both, update
+                // If prop is null on one of the baseModel/entityModel but not both, update
                 if ((entityFromDbValue == null ^ entityFromClientValue == null))
                 {
-                    entityFromDB[prop.Name] = entityFromClientValue;
-                    this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
+                    //entityFromDB[prop.Name] = entityFromClientValue;
+                    this.Context.Entry(entityFromClient).Property(prop.Name).IsModified = true;
                 }
                 else if (!(entityFromDbValue == null && entityFromClientValue == null) && !entityFromDbValue.Equals(entityFromClientValue))
                 {
-                    entityFromDB[prop.Name] = entityFromClientValue;
-                    this.Context.Entry(entityFromDB).Property(prop.Name).IsModified = true;
+                    //entityFromDB[prop.Name] = entityFromClientValue;
+                    this.Context.Entry(entityFromClient).Property(prop.Name).IsModified = true;
                 }
             }
         }

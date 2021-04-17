@@ -37,7 +37,7 @@ namespace RecipesApi.Services
             }
             catch (Exception e)
             {
-                this._logger.LogError($"Something happened: {e.InnerException}", e);
+                this._logger.LogError($"Database isn't reachable. Exception: {e.InnerException}", e);
                 throw e;
             }
         }
