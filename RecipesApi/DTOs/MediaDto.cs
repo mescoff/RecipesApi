@@ -10,9 +10,15 @@ namespace RecipesApi.DTOs
     {
         public int Id { get; set; }
 
+        //[Required]
+        //[MinLength(1)]
+        //public byte[] MediaBytes { get; set; }
+
         [Required]
-        [MinLength(1)]
-        public byte[] MediaBytes { get; set; }
+        [MinLength(22)]
+        // 22 char is min required for dataUrl representing image ? must have info in front and first char of image in base64. Ex: data:image/xx;base64,d
+        // DataURL is in format "data:<MimeType>;base64,<imgBytesToBase64>   
+        public string MediaDataUrl { get; set; }
 
         [Required]
         [MaxLength(200)]
@@ -45,7 +51,7 @@ namespace RecipesApi.DTOs
         {
             return (
                 this.Id == obj.Id &&
-                this.MediaBytes.SequenceEqual(obj.MediaBytes) &&
+                this.MediaDataUrl.SequenceEqual(obj.MediaDataUrl) &&
                 this.Title == obj.Title &&
                 this.Tag == obj.Tag &&
                 this.Recipe_Id == obj.Recipe_Id
@@ -57,7 +63,7 @@ namespace RecipesApi.DTOs
             return new MediaDto
             {
                 Id = obj.Id,
-                MediaBytes = obj.MediaBytes,
+                MediaDataUrl = obj.MediaDataUrl,
                 Title = obj.Title,
                 Tag = obj.Title,
                 Recipe_Id = obj.Recipe_Id,

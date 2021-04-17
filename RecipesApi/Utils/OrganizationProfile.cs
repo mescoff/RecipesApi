@@ -17,8 +17,8 @@ namespace RecipesApi.Utils
             // TODO: Cleanup            
             CreateMap<IngredientBase, Ingredient>().ReverseMap();
             CreateMap<MediaDto, Media>();
-            CreateMap<Media, MediaDto>()
-                .ForMember(dto => dto.MediaBytes, m => m.MapFrom<CustomMediaResolver>()); // TODO: USE THIS when updating media in Recipe
+            //CreateMap<Media, MediaDto>()
+                //.ForMember(dto => dto.MediaDataUrl, m => m.MapFrom<CustomMediaResolver>()); // TODO: USE THIS when updating media in Recipe
             CreateMap<AddRecipeCategoryDto, RecipeCategory>();
             CreateMap<Recipe, GetRecipeDto>()
                 .ForMember(dto => dto.Categories, r => r.MapFrom(r => r.RecipeCategories.Select(rc => rc.Category)));
@@ -34,6 +34,7 @@ namespace RecipesApi.Utils
         {
             try
             {
+
                 var imgBytes = System.IO.File.ReadAllBytes(source.MediaPath);
                 // Validating it's an image
                 try

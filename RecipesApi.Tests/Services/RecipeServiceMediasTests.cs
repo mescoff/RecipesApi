@@ -146,7 +146,7 @@ namespace RecipesApi.Tests.Services
                     // overriding ingredient to remove linked/tracked objects, and modifying some properties
                     // TODO: verify why object is being tracked? When we have asNoTracking set
                     recipeToUpdate.Medias.Remove(media);
-                    recipeToUpdate.Medias.Add(new MediaDto { Id = media.Id, Recipe_Id = media.Recipe_Id, Title = "OrangeJuice", Tag = "Juice", MediaBytes = media.MediaBytes });
+                    recipeToUpdate.Medias.Add(new MediaDto { Id = media.Id, Recipe_Id = media.Recipe_Id, Title = "OrangeJuice", Tag = "Juice", MediaDataUrl = media.MediaDataUrl });
 
                     await service.UpdateOne(recipeToUpdate);
                 }
@@ -198,7 +198,7 @@ namespace RecipesApi.Tests.Services
                     // Load images json and select image 1 (foodMarket.jpg) that we know isn't in Media with ID 1 (foodColor.jpeg)
                     var TestImages = LoadRecipeMediaDtoFromJson(recipeId);
                     // Update properties AND mediabytes
-                    recipeToUpdate.Medias.Add(new MediaDto { Id = media.Id, Recipe_Id = media.Recipe_Id, Title = "FoodMarket", Tag = media.Tag, MediaBytes = TestImages.First().MediaBytes });
+                    recipeToUpdate.Medias.Add(new MediaDto { Id = media.Id, Recipe_Id = media.Recipe_Id, Title = "FoodMarket", Tag = media.Tag, MediaDataUrl = TestImages.First().MediaDataUrl });
                     await service.UpdateOne(recipeToUpdate);
                 }
                 using (var context = new RecipesContext(options))

@@ -84,11 +84,23 @@ namespace RecipesApi.Utils
                 string recipeDirectory;
                 var mediaFilePath = GenerateSingleMediaPath(this.UserMediasPath, mediaDto.Recipe_Id, mediaDto.Id, out recipeDirectory);          
                 try
-                {
-                    // verify it's a valid image, otherwise exception will be caught  
-                    // TODO: might be useless? We won't use the image. But at least if an exception is caught we skip this media
-                    var image = ByteArrayToImage(mediaDto.MediaBytes);
-                    double fileSize = mediaDto.MediaBytes.Length;
+                {                 
+                    // Parse data URL and retrieve image bytes from it. base64UrlSplit should be split in 2 parts (info + imageinBase64String)
+                    var base64UrlSplit = mediaDto.MediaDataUrl.Split(',');
+                    byte[] dataBytes;
+                    dataBytes = base64UrlSplit.Length == 2 ? Convert.FromBase64String(base64UrlSplit[1]) : null;
+                    if (dataBytes == null) {
+                        // If we can't read dataURL, track error
+                        savingStatus.Success = false;
+                        var msg = $"Unable to load MediaDto [ID:{mediaDto.Id}, Title:{mediaDto.Title}, RecipeID:{mediaDto.Recipe_Id}]. Something is wrong with dataUrl received";
+                        this._logger.LogError(msg);
+                        savingStatus.Message = savingStatus.Message == null ? msg : savingStatus.Message.Concat(msg).ToString();
+                        continue;
+                    }
+
+                    // verify it's a valid image, otherwise exception will be caught 
+                    var image = ByteArrayToImage(dataBytes);
+                    double fileSize = dataBytes.Length;
                     if (image != null)
                     {
                         // we will allow a max size of 800kb
@@ -98,9 +110,9 @@ namespace RecipesApi.Utils
                  
                         // FOR NOW we only support JPEG and we Compress.  [In long run we could do lossless PNG if img is < specific size ?]
                         // 1- We need to Compress our Image (maybe resize it but that'll be for later)
-                        // 2- Convert it to PNG
+                        // 2- Convert it to JPEG (--for now-- even if already JPEG since we need to perform the compression anyway)
                         // 3- Then Write bytes to file.
-                        var imageBytesPrepped = Compress(mediaDto.MediaBytes, qualityLevelConverted, ImageFormat.Jpeg);
+                        var imageBytesPrepped = Compress(dataBytes, qualityLevelConverted, ImageFormat.Jpeg);
 
                         // Making sure the directory exist or create it
                         Directory.CreateDirectory(recipeDirectory);
@@ -134,12 +146,15 @@ namespace RecipesApi.Utils
                     {
                         //var bytes = await File.ReadAllBytesAsync(media.MediaPath); // Not needed at the moment, not loading from remote server
                         var bytes = File.ReadAllBytes(media.MediaPath);
-                        // Check its an image
+                        // Check that its indeed an image (by converting it to Image object)
                         var image = ByteArrayToImage(bytes);
                         if (image != null)
-                        {
-                            // conversion was successfull
-                            var convertedMedia = new MediaDto { Id = media.Id, MediaBytes = bytes, Recipe_Id = media.Recipe_Id, Tag = media.Tag, Title = media.Title };
+                        {                         
+                            // convert bytes to base64 and create a dataURL object.
+                            var b64String = Convert.ToBase64String(bytes);
+                            var mimeType = "image/jpeg";
+                            var dataUrl = $"data:{mimeType};base64,{b64String}";  // jpeg is default. We convert all images to jpeg on receive
+                            var convertedMedia = new MediaDto { Id = media.Id, MediaDataUrl = dataUrl, Recipe_Id = media.Recipe_Id, Tag = media.Tag, Title = media.Title };
                             result.Add(convertedMedia);
                             image.Dispose();
                         }

@@ -11,9 +11,9 @@ namespace RecipesApi.Tests.Models
     [TestFixture]
     public class MediaDTOValidationTests
     {
-        #region MediaBytes
+        #region MediaDataUrl
         [Test]
-        public void MediaDTO_MediaBytesIsRequired()
+        public void MediaDTO_MediaDataUrlIsRequired()
         {
             var mediaDto = new MediaDto { Id = 1, Title = "0", Recipe_Id = 1 };
             var context = new ValidationContext(mediaDto, null, null);
@@ -22,28 +22,28 @@ namespace RecipesApi.Tests.Models
             var validationError = results.FirstOrDefault();
 
             Assert.AreEqual(false, actual);
-            Assert.AreEqual("The MediaBytes field is required.", validationError.ErrorMessage);
-            Assert.AreEqual("MediaBytes", validationError.MemberNames.FirstOrDefault());
+            Assert.AreEqual("The MediaDataUrl field is required.", validationError.ErrorMessage);
+            Assert.AreEqual("MediaDataUrl", validationError.MemberNames.FirstOrDefault());
         }
 
         [Test]
-        public void MediaDTO_MediaBytesNeedsLengthGreaterThan0()
+        public void MediaDTO_MediaDataUrlNeedsLengthGreaterThan22()
         {
-            var mediaDto = new MediaDto { Id = 1, Title = "0", Recipe_Id = 1, MediaBytes = new byte[0] };
+            var mediaDto = new MediaDto { Id = 1, Title = "0", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64," };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
             var validationError = results.FirstOrDefault();
 
             Assert.AreEqual(false, actual);
-            Assert.AreEqual("The field MediaBytes must be a string or array type with a minimum length of '1'.", validationError.ErrorMessage);
-            Assert.AreEqual("MediaBytes", validationError.MemberNames.FirstOrDefault());
-        }   
+            Assert.AreEqual("The field MediaDataUrl must be a string or array type with a minimum length of '22'.", validationError.ErrorMessage);
+            Assert.AreEqual("MediaDataUrl", validationError.MemberNames.FirstOrDefault());
+        }
 
         [Test]
-        public void MediaDTO_MediaBytesWithLengthGreaterThan0IsValid()
+        public void MediaDTO_MediaDataUrlWithLengthGreaterThan22IsValid()
         {
-            var mediaDto = new MediaDto { Id = 1, Title = "0", Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Title = "0", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -56,7 +56,7 @@ namespace RecipesApi.Tests.Models
         [Test]
         public void MediaDTO_TitleIsRequired()
         {
-            var mediaDto = new MediaDto { Id = 1, Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -71,7 +71,7 @@ namespace RecipesApi.Tests.Models
         [TestCase("SUGar")]
         public void MediaDTO_TitleWithOnlyLettersIsValid(string title)
         {
-            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -83,7 +83,7 @@ namespace RecipesApi.Tests.Models
         [TestCase("sugar___DADDY_hi")]
         public void MediaDTO_TitleWithUnderscoreIsValid(string title)
         {
-            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -95,12 +95,12 @@ namespace RecipesApi.Tests.Models
         [TestCase("1256_hello")]
         public void MediaDTO_TitleWithDigitsIsValid(string title)
         {
-            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
 
-            Assert.AreEqual(true, actual);    
+            Assert.AreEqual(true, actual);
         }
 
         [TestCase("12.90")]
@@ -110,7 +110,7 @@ namespace RecipesApi.Tests.Models
         [TestCase(@"abo#dso")]
         public void MediaDTO_TitleWithUnauthorizedSymbolsIsInvalid(string title)
         {
-            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Title = title, Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -118,7 +118,7 @@ namespace RecipesApi.Tests.Models
             var validationError = results.FirstOrDefault();
             Assert.AreEqual(false, actual);
             Assert.AreEqual("The Media title can only contain MAJ or MIN letters, digits, or _", validationError.ErrorMessage);
-            Assert.AreEqual("Title", validationError.MemberNames.FirstOrDefault());          
+            Assert.AreEqual("Title", validationError.MemberNames.FirstOrDefault());
         }
         #endregion
 
@@ -128,7 +128,7 @@ namespace RecipesApi.Tests.Models
         {
             var rdm = new Random();
             var tag = rdm.GenerateRandomString(51);
-            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -143,7 +143,7 @@ namespace RecipesApi.Tests.Models
         [TestCase("SUGar")]
         public void MediaDTO_TagWithOnlyLettersIsValid(string tag)
         {
-            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -155,7 +155,7 @@ namespace RecipesApi.Tests.Models
         [TestCase("sugar___DADDY_hi")]
         public void MediaDTO_TagWithUnderscoreIsValid(string tag)
         {
-            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -167,7 +167,7 @@ namespace RecipesApi.Tests.Models
         [TestCase("1256_hello")]
         public void MediaDTO_TagWithDigitsIsValid(string tag)
         {
-            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -182,7 +182,7 @@ namespace RecipesApi.Tests.Models
         [TestCase(@"abo#dso")]
         public void MediaDTO_TagWithUnauthorizedSymbolsIsInvalid(string tag)
         {
-            var mediaDto = new MediaDto { Id = 1, Tag=tag, Title = "hi", Recipe_Id = 1, MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Tag = tag, Title = "hi", Recipe_Id = 1, MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);
@@ -197,7 +197,7 @@ namespace RecipesApi.Tests.Models
         [Test]
         public void MediaDTO_RecipIdIsRequired()
         {
-            var mediaDto = new MediaDto { Id = 1, Title = "hi",  MediaBytes = new byte[1] };
+            var mediaDto = new MediaDto { Id = 1, Title = "hi", MediaDataUrl = "data:image/dd;base64,/9ndhjffj" };
             var context = new ValidationContext(mediaDto, null, null);
             var results = new List<ValidationResult>();
             var actual = Validator.TryValidateObject(mediaDto, context, results, true);

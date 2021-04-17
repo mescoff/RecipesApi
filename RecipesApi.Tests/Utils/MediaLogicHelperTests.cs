@@ -60,7 +60,7 @@ namespace RecipesApi.Tests.Utils
             var mediaDtos = helper.LocateAndLoadMedias(new List<Media>() { media });
             Assert.IsNotNull(mediaDtos);
             var mediaDto = mediaDtos.FirstOrDefault();
-            Assert.IsNotEmpty(mediaDto.MediaBytes);
+            Assert.IsNotEmpty(mediaDto.MediaDataUrl);
         }
 
         [Test]

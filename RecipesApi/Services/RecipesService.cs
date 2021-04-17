@@ -500,7 +500,7 @@ namespace RecipesApi
                         // STEP 1 - Load media from local storage into mediaDto  [quicker than duplicating code to load path into Image]
                         var mediaDto = MediaHelper.LocateAndLoadMedias(new List<Media> { media }).SingleOrDefault();
                         // STEP 2 - Compare bytes from received media and saved media
-                        if (!mediaDto.MediaBytes.SequenceEqual(receivedMedia.MediaBytes))
+                        if (!mediaDto.MediaDataUrl.SequenceEqual(receivedMedia.MediaDataUrl))
                         {
                             // TODO: LOG
                             // I prefer to delete media entirely and save new one, in case Media path changed at application level (so override will not work and new image would be saved in new location without proper cleanup)
