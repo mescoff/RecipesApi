@@ -67,19 +67,21 @@ namespace RecipesApi
             });
             services.AddAutoMapper(typeof(Startup));
             services.AddControllers();
-        
+
+            // Verify DB connection can be established before registering it (otherwise we won't know until API is hit for the first time)
+            TestDBConnection();
 
             // Stopped using Oracle MySql Entity Framework lib: https://github.com/dotnet/efcore/issues/17788
             // Using Pomelo instead which support NetCore 3+
-            // Lazy loading DBSets only when needed
             services.AddDbContext<RecipesContext>(options =>
                 //.UseLazyLoadingProxies()
                 options
                     //.UseLoggerFactory(ConsoleLoggerFactory)
-                    .EnableSensitiveDataLogging()
+                    .EnableSensitiveDataLogging()  // TODO: disable in PROD
                     .UseMySql(Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 18)))
                 //mySqlOptions => mySqlOptions.ServerVersion(new ServerVersion(new Version(8, 0, 18), ServerType.MySql)))
                 );
+
             services.AddScoped<IMediaLogicHelper, MediaLogicHelper>();
 
             services.AddScoped<IRecipesService<RecipeDto>, RecipesService>();
@@ -134,6 +136,26 @@ namespace RecipesApi
             {
                 endpoints.MapControllers();
             });
+        }
+
+        private void TestDBConnection()
+        {
+            var contextOptions = new DbContextOptionsBuilder<RecipesContext>()
+                    .UseMySql(Configuration.GetConnectionString("DefaultConnection"), new MySqlServerVersion(new Version(8, 0, 18)))
+                    .Options;
+
+            using (var context = new RecipesContext(contextOptions))
+            {
+                try
+                {
+                    context.Database.EnsureCreated();
+
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
+            }
         }
 
         private static readonly ILoggerFactory ConsoleLoggerFactory = LoggerFactory.Create(builder =>
